@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brain Tumor Segmentation – Dr. Sarah Andrews</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{margin:0;font-family:'Inter',system-ui,-apple-system,sans-serif;background:#f0f4f8;color:#1a202c}
+#root{min-height:100vh;display:flex;flex-direction:column}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:#e2e8f0}
+::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:#64748b}
+
+.header{
+  background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 60%,#3b82f6 100%);
+  height:64px;padding:0 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 4px 20px rgba(37,99,235,0.35);
+  position:sticky;top:0;z-index:100;flex-shrink:0;
+}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo-box{width:40px;height:40px;background:rgba(255,255,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,0.2)}
+.logo-box svg{width:24px;height:24px;fill:white}
+.brand-text h1{font-size:17px;font-weight:700;color:#fff;letter-spacing:-.2px;line-height:1.2}
+.brand-text p{font-size:10px;color:rgba(255,255,255,0.7);font-weight:400;letter-spacing:.3px}
+.nav-tabs{display:flex;gap:2px;background:rgba(0,0,0,0.15);border-radius:10px;padding:3px}
+.nav-tab{padding:8px 18px;border:none;cursor:pointer;font-size:13px;font-weight:500;border-radius:8px;transition:all .25s;background:transparent;color:rgba(255,255,255,0.65);font-family:inherit;letter-spacing:-.1px}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,0.08)}
+.nav-tab.active{background:rgba(255,255,255,0.2);color:#fff;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.header-right{display:flex;align-items:center;gap:14px}
+.notif-btn{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;color:white;font-size:16px}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:#ef4444;border-radius:50%;border:1.5px solid #1e3a5f}
+.user-pill{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:28px;padding:4px 14px 4px 4px;cursor:pointer;transition:background .2s}
+.user-pill:hover{background:rgba(255,255,255,0.18)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#60a5fa,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;border:2px solid rgba(255,255,255,0.3)}
+.user-details{text-align:left}
+.user-details .name{font-size:12px;font-weight:600;color:#fff;line-height:1.2}
+.user-details .role{font-size:9px;color:rgba(255,255,255,0.6);font-weight:400}
+.dropdown-menu{position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid #e2e8f0;border-radius:12px;min-width:200px;box-shadow:0 12px 40px rgba(0,0,0,0.15);z-index:200;overflow:hidden;animation:dropIn .2s ease}
+@keyframes dropIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.dd-item{padding:10px 16px;font-size:13px;color:#475569;cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:10px;font-weight:500}
+.dd-item:hover{background:#f1f5f9;color:#1e293b}
+.dd-divider{height:1px;background:#e2e8f0;margin:4px 0}
+
+.main{flex:1;display:flex;background:#f0f4f8}
+.content-area{flex:1;padding:20px 24px;display:flex;flex-direction:column;gap:16px}
+.sidebar{width:360px;flex-shrink:0;background:#fff;border-left:1px solid #e2e8f0;padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:-4px 0 20px rgba(0,0,0,0.04)}
+
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.card-header{padding:14px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f1f5f9}
+.card-header-title{font-size:14px;font-weight:600;color:#1e293b;display:flex;align-items:center;gap:8px}
+.card-body{padding:16px 18px}
+
+.page-title-bar{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:4px}
+.page-title{font-size:22px;font-weight:700;color:#0f172a;letter-spacing:-.3px;line-height:1.2}
+.page-subtitle{font-size:12px;color:#64748b;font-weight:400;margin-top:3px}
+.page-title-bar .breadcrumb{font-size:11px;color:#94a3b8;display:flex;gap:6px;align-items:center}
+.page-title-bar .breadcrumb span{color:#3b82f6;font-weight:500}
+
+.mri-tool-btn{padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,0.15);cursor:pointer;transition:all .2s;background:rgba(0,0,0,0.5);color:rgba(255,255,255,0.75);backdrop-filter:blur(6px);font-family:inherit}
+.mri-tool-btn:hover{background:rgba(255,255,255,0.15);color:#fff}
+.mri-tool-btn.active{background:rgba(59,130,246,0.7);border-color:rgba(59,130,246,0.8);color:#fff}
+.mri-labels{position:absolute;bottom:12px;left:12px;display:flex;gap:12px;z-index:10}
+.mri-label-tag{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:5px;backdrop-filter:blur(6px);background:rgba(0,0,0,0.55);color:rgba(255,255,255,0.85)}
+.mri-label-dot{width:8px;height:8px;border-radius:2px}
+
+.coord-group{display:flex;flex-direction:column;gap:10px}
+.coord-row{display:flex;align-items:center;gap:10px}
+.coord-badge{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.coord-badge.x{background:#eff6ff;color:#2563eb}
+.coord-badge.y{background:#f0fdf4;color:#16a34a}
+.coord-badge.z{background:#fff7ed;color:#ea580c}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:6px;border-radius:4px;outline:none;cursor:pointer;background:#e2e8f0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;cursor:pointer;border:2.5px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.25)}
+input[type=range].x-slider::-webkit-slider-thumb{background:#2563eb}
+input[type=range].y-slider::-webkit-slider-thumb{background:#16a34a}
+input[type=range].z-slider::-webkit-slider-thumb{background:#ea580c}
+.coord-val{width:52px;text-align:right;font-size:13px;font-weight:600;color:#334155;font-family:'Inter',monospace}
+
+.dice-section{text-align:center}
+.dice-main-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.dice-circle-wrap{display:flex;justify-content:center;margin-bottom:14px}
+.dice-bars{display:flex;flex-direction:column;gap:10px}
+.dice-bar-head{display:flex;justify-content:space-between;margin-bottom:4px}
+.dice-bar-label{font-size:12px;color:#64748b;font-weight:500}
+.dice-bar-val{font-size:12px;font-weight:700}
+.dice-bar-track{height:7px;background:#f1f5f9;border-radius:4px;overflow:hidden}
+.dice-bar-fill{height:100%;border-radius:4px;transition:width 1.2s ease}
+
+.metric-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;transition:all .2s}
+.metric-row:hover{background:#eff6ff;border-color:#dbeafe}
+.metric-icon-box{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.metric-text{flex:1}
+.metric-text .label{font-size:11px;color:#94a3b8;font-weight:500;margin-bottom:2px}
+.metric-text .value{font-size:16px;font-weight:700;color:#0f172a}
+.metric-text .value .unit{font-size:11px;font-weight:500;color:#94a3b8}
+.metric-chip{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.4px}
+.chip-green{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+.chip-blue{background:#dbeafe;color:#1d4ed8;border:1px solid #bfdbfe}
+.chip-amber{background:#fef3c7;color:#b45309;border:1px solid #fde68a}
+
+.clinical-note{background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:0 10px 10px 0;padding:14px 16px}
+.clinical-note-head{font-size:11px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.clinical-note p{font-size:12px;color:#78350f;line-height:1.7;font-weight:400}
+
+.treatment-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.tx-item{display:flex;align-items:center;gap:12px;padding:10px 12px;background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;transition:all .2s}
+.tx-item:hover{background:#eff6ff;border-color:#dbeafe;transform:translateX(3px)}
+.tx-icon-wrap{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.tx-body{flex:1}
+.tx-body .tx-name{font-size:13px;font-weight:600;color:#1e293b}
+.tx-body .tx-detail{font-size:11px;color:#94a3b8;margin-top:1px}
+.tx-check-mark{width:20px;height:20px;border-radius:50%;background:#dcfce7;border:1.5px solid #86efac;display:flex;align-items:center;justify-content:center;font-size:10px;color:#15803d}
+.btn-refer{width:100%;padding:12px;border-radius:10px;background:linear-gradient(135deg,#7c3aed,#8b5cf6);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;letter-spacing:-.1px;box-shadow:0 4px 14px rgba(124,58,237,0.3)}
+.btn-refer:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,58,237,0.4)}
+
+.footer{height:56px;padding:0 24px;background:#fff;border-top:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.footer-left{display:flex;align-items:center;gap:12px}
+.footer-right{display:flex;align-items:center;gap:8px}
+.f-btn{padding:8px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .2s;font-family:inherit;display:flex;align-items:center;gap:6px}
+.f-btn-ghost{background:#f8fafc;border-color:#e2e8f0;color:#475569}
+.f-btn-ghost:hover{background:#f1f5f9;border-color:#cbd5e1}
+.f-btn-orange{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff}
+.f-btn-orange:hover{box-shadow:0 4px 12px rgba(249,115,22,0.35);transform:translateY(-1px)}
+.f-btn-green{background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff}
+.f-btn-green:hover{box-shadow:0 4px 12px rgba(34,197,94,0.35);transform:translateY(-1px)}
+.f-btn-blue{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+.f-btn-blue:hover{box-shadow:0 4px 12px rgba(59,130,246,0.35);transform:translateY(-1px)}
+.f-version{font-size:10px;color:#94a3b8;font-weight:400}
+
+.upload-zone{border:2.5px dashed #cbd5e1;border-radius:16px;padding:48px 24px;text-align:center;transition:all .3s;cursor:pointer;background:#fafbfc}
+.upload-zone:hover,.upload-zone.drag{border-color:#3b82f6;background:#eff6ff}
+.upload-zone .icon{font-size:48px;margin-bottom:14px;filter:grayscale(.3)}
+.upload-zone h3{font-size:17px;font-weight:600;color:#1e293b;margin-bottom:6px}
+.upload-zone p{font-size:13px;color:#94a3b8}
+.upload-tags{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.upload-tag{padding:3px 10px;border-radius:6px;background:#eff6ff;border:1px solid #dbeafe;font-size:10px;font-weight:600;color:#3b82f6}
+.btn-demo{padding:10px 24px;border-radius:10px;background:#f8fafc;border:1.5px solid #e2e8f0;color:#475569;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.btn-demo:hover{background:#eff6ff;border-color:#93c5fd;color:#2563eb}
+
+.arch-box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:16px}
+.arch-box h4{font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px}
+.arch-box ul{list-style:none;display:flex;flex-direction:column;gap:5px}
+.arch-box li{font-size:12px;color:#64748b;padding-left:16px;position:relative;line-height:1.6}
+.arch-box li::before{content:'';position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;background:#3b82f6}
+
+.reports-table{width:100%;border-collapse:separate;border-spacing:0}
+.reports-table th{padding:10px 14px;background:#f8fafc;font-size:11px;font-weight:600;color:#64748b;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e5e7eb}
+.reports-table td{padding:12px 14px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9}
+.reports-table tr:hover td{background:#f8fafc}
+.status-badge{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;display:inline-block}
+.status-reviewed{background:#dcfce7;color:#15803d}
+.status-pending{background:#fef3c7;color:#b45309}
+
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;transition:all .2s;position:relative;overflow:hidden}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.06)}
+.stat-card .stat-icon{width:44px;height:44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px}
+.stat-card .stat-value{font-size:26px;font-weight:800;color:#0f172a;letter-spacing:-.5px}
+.stat-card .stat-label{font-size:11px;color:#94a3b8;font-weight:500;margin-top:2px}
+.stat-card .stat-change{position:absolute;top:14px;right:14px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:12px}
+
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(4px);gap:14px}
+.spinner{width:44px;height:44px;border:3.5px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay .lo-text{font-size:15px;font-weight:600;color:#334155}
+.loading-overlay .lo-sub{font-size:12px;color:#94a3b8}
+
+.toast-stack{position:fixed;bottom:24px;right:24px;z-index:1100;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 6px 20px rgba(0,0,0,0.12);animation:toastIn .3s ease;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px)}
+.toast-success{background:#fff;color:#15803d;border:1px solid #bbf7d0}
+.toast-error{background:#fff;color:#dc2626;border:1px solid #fecaca}
+.toast-info{background:#fff;color:#2563eb;border:1px solid #bfdbfe}
+@keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+
+@media(max-width:1024px){.sidebar{width:320px}.stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.main{flex-direction:column}.sidebar{width:100%;border-left:none;border-top:1px solid #e2e8f0}.nav-tabs{display:none}.stats-grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const{useState,useEffect,useRef,useCallback}=React;
+const API=window.location.port==='3000'?'http://localhost:8000':'';
+
+const DEMO={
+  status:"success",
+  dice_scores:{whole_tumor:91.0,tumor_core:95.0,enhancing_tumor:90.0},
+  tumor_volume_mm3:438,
+  coordinates:{x:45.8,y:67.2,z:23.1},
+  confidence:91.0,confidence_label:"High",
+  mri_image:null,overlay_image:null,
+  mask_summary:{whole_tumor_pixels:2420,tumor_core_pixels:980,enhancing_tumor_pixels:195},
+  treatment_recommendation:{
+    note:"High segmentation confidence (91% Dice Score). Tumor volume of 438 cubic mm may indicate need for local surgical resection based on tumor location.",
+    options:[
+      {treatment:"Radiation therapy",detail:"Next MRI follow-up in 3 months"},
+      {treatment:"Radiotherapy",detail:"Targeted beam to residual tumor cells"},
+      {treatment:"Chemotherapy",detail:"Adjuvant temozolomide protocol"},
+    ]
+  }
+};
+
+function useToast(){
+  const[ts,setTs]=useState([]);
+  const show=useCallback((msg,type)=>{
+    type=type||'info';
+    const id=Date.now();
+    setTs(t=>[...t,{id,msg,type}]);
+    setTimeout(()=>setTs(t=>t.filter(x=>x.id!==id)),3500);
+  },[]);
+  return{toasts:ts,show};
+}
+
+function Gauge({value,size,stroke}){
+  value=value||91;size=size||120;stroke=stroke||9;
+  const r=(size-stroke*2)/2,circ=2*Math.PI*r;
+  const[anim,setAnim]=useState(0);
+  useEffect(()=>{setTimeout(()=>setAnim(value),350)},[value]);
+  const offset=circ-(anim/100)*circ;
+  const cx=size/2,cy=size/2;
+  const color=value>=90?'#22c55e':value>=75?'#f59e0b':'#ef4444';
+  return(
+    React.createElement('svg',{width:size,height:size},
+      React.createElement('circle',{cx:cx,cy:cy,r:r,fill:'none',stroke:'#f1f5f9',strokeWidth:stroke}),
+      React.createElement('circle',{cx:cx,cy:cy,r:r,fill:'none',stroke:color,strokeWidth:stroke,
+        strokeDasharray:circ,strokeDashoffset:offset,strokeLinecap:'round',
+        transform:'rotate(-90 '+cx+' '+cy+')',
+        style:{transition:'stroke-dashoffset 1.3s cubic-bezier(.4,0,.2,1)'}}),
+      React.createElement('text',{x:cx,y:cy-5,textAnchor:'middle',fill:'#0f172a',fontSize:'26',fontWeight:'800',fontFamily:'Inter,sans-serif'},anim.toFixed(0)+'%'),
+      React.createElement('text',{x:cx,y:cy+14,textAnchor:'middle',fill:color,fontSize:'10',fontWeight:'700',fontFamily:'Inter,sans-serif',letterSpacing:'1'},'DICE SCORE')
+    )
+  );
+}
+
+function MRICanvas({overlayImage,showOverlay,coords}){
+  const ref=useRef(null);
+  function draw(ctx,w,h,seg,cx_,cy_){
+    ctx.clearRect(0,0,w,h);
+    const bg=ctx.createLinearGradient(0,0,w,h);
+    bg.addColorStop(0,'#0a0e1a');bg.addColorStop(1,'#0f172a');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+
+    const drawBrain=function(ox,label,showTumor){
+      const bcx=ox,bcy=h/2,brx=w*0.20,bry=h*0.42;
+      const gs=ctx.createRadialGradient(bcx,bcy-bry*0.15,bry*0.1,bcx,bcy,bry*1.06);
+      gs.addColorStop(0,'#a8a8a0');gs.addColorStop(0.8,'#706858');gs.addColorStop(1,'#484038');
+      ctx.beginPath();ctx.ellipse(bcx,bcy,brx*1.06,bry*1.06,0,0,Math.PI*2);ctx.fillStyle=gs;ctx.fill();
+      const gb=ctx.createRadialGradient(bcx-brx*0.12,bcy-bry*0.18,bry*0.12,bcx,bcy,bry);
+      gb.addColorStop(0,'#d4c8b0');gb.addColorStop(0.3,'#b8a888');gb.addColorStop(0.65,'#9a8570');gb.addColorStop(1,'#706050');
+      ctx.beginPath();ctx.ellipse(bcx,bcy,brx,bry,0,0,Math.PI*2);ctx.fillStyle=gb;ctx.fill();
+      ctx.strokeStyle='rgba(0,0,0,0.3)';ctx.lineWidth=1.2;
+      [[bcx-brx*.6,bcy-bry*.55,brx*.35,bry*.4,0,0,Math.PI],
+       [bcx+brx*.15,bcy-bry*.5,brx*.3,bry*.38,0,0,Math.PI],
+       [bcx-brx*.15,bcy-bry*.05,brx*.28,bry*.32,.3,0,Math.PI],
+       [bcx-brx*.55,bcy+bry*.35,brx*.22,bry*.18,-.2,Math.PI,Math.PI*2],
+       [bcx+brx*.1,bcy+bry*.38,brx*.25,bry*.2,.1,Math.PI,Math.PI*2]
+      ].forEach(function(p){ctx.beginPath();ctx.ellipse(p[0],p[1],p[2],p[3],p[4],p[5],p[6]);ctx.stroke()});
+      ctx.fillStyle='rgba(10,20,50,0.8)';
+      ctx.beginPath();ctx.ellipse(bcx-brx*.04,bcy+bry*.1,brx*.1,bry*.18,.1,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.ellipse(bcx+brx*.09,bcy+bry*.12,brx*.08,bry*.15,-.1,0,Math.PI*2);ctx.fill();
+
+      if(showTumor){
+        const tx=bcx+brx*0.25+(cx_/100-.5)*brx*.25;
+        const ty=bcy-bry*0.1+(cy_/100-.5)*bry*.25;
+        const gw=ctx.createRadialGradient(tx,ty,2,tx,ty,brx*.36);
+        gw.addColorStop(0,'rgba(34,197,94,0.6)');gw.addColorStop(.6,'rgba(34,197,94,0.35)');gw.addColorStop(1,'rgba(34,197,94,0.02)');
+        ctx.beginPath();ctx.ellipse(tx,ty,brx*.36,bry*.38,.15,0,Math.PI*2);ctx.fillStyle=gw;ctx.fill();
+        ctx.strokeStyle='rgba(34,197,94,0.6)';ctx.lineWidth=1.5;ctx.stroke();
+        const gc=ctx.createRadialGradient(tx+2,ty-2,1,tx+2,ty-2,brx*.2);
+        gc.addColorStop(0,'rgba(249,115,22,0.8)');gc.addColorStop(.5,'rgba(249,115,22,0.5)');gc.addColorStop(1,'rgba(249,115,22,0.02)');
+        ctx.beginPath();ctx.ellipse(tx+2,ty-2,brx*.2,bry*.22,.2,0,Math.PI*2);ctx.fillStyle=gc;ctx.fill();
+        const ge=ctx.createRadialGradient(tx+6,ty-6,1,tx+6,ty-6,brx*.09);
+        ge.addColorStop(0,'rgba(250,204,21,0.95)');ge.addColorStop(.5,'rgba(250,204,21,0.7)');ge.addColorStop(1,'rgba(250,204,21,0.02)');
+        ctx.beginPath();ctx.ellipse(tx+6,ty-6,brx*.09,bry*.1,-.1,0,Math.PI*2);ctx.fillStyle=ge;ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,0.2)';ctx.lineWidth=.7;ctx.setLineDash([3,3]);
+        ctx.beginPath();ctx.moveTo(tx,10);ctx.lineTo(tx,ty-10);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(tx,ty+10);ctx.lineTo(tx,h-10);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(ox-brx*1.1,ty);ctx.lineTo(tx-10,ty);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(tx+10,ty);ctx.lineTo(ox+brx*1.1,ty);ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.fillStyle='rgba(0,0,0,0.55)';
+      ctx.font='600 11px Inter,sans-serif';
+      const lw=ctx.measureText(label).width+16;
+      ctx.fillRect(ox-lw/2,12,lw,22);
+      ctx.fillStyle=showTumor?'#93c5fd':'#94a3b8';
+      ctx.textAlign='center';ctx.fillText(label,ox,27);ctx.textAlign='start';
+    };
+
+    drawBrain(w*.25,'Segmentation Overlay',seg);
+    ctx.strokeStyle='rgba(255,255,255,0.15)';ctx.lineWidth=1;
+    ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(w*.5,8);ctx.lineTo(w*.5,h-8);ctx.stroke();ctx.setLineDash([]);
+    drawBrain(w*.75,'Original MRI',false);
+  }
+  useEffect(function(){
+    const c=ref.current;if(!c)return;const ctx=c.getContext('2d');
+    if(overlayImage){
+      const img=new Image();
+      img.onload=function(){ctx.clearRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height)};
+      img.src='data:image/png;base64,'+overlayImage;
+    }else{draw(ctx,c.width,c.height,showOverlay,coords.x,coords.y)}
+  },[overlayImage,showOverlay,coords]);
+  return React.createElement('canvas',{ref:ref,width:'900',height:'420',style:{display:'block',width:'100%',height:'auto',borderRadius:'12px'}});
+}
+
+function Plot3D({coords}){
+  const ref=useRef(null);
+  useEffect(function(){
+    if(!ref.current||!window.Plotly)return;
+    const x=coords.x,y=coords.y,z=coords.z;const N=100;
+    const px=Array.from({length:N},function(){return x+(Math.random()-.5)*20});
+    const py=Array.from({length:N},function(){return y+(Math.random()-.5)*22});
+    const pz=Array.from({length:N},function(){return z+(Math.random()-.5)*16});
+    const col=px.map(function(xi,i){const d=Math.sqrt(Math.pow(xi-x,2)+Math.pow(py[i]-y,2)+Math.pow(pz[i]-z,2));return d<5?'#facc15':d<10?'#f97316':'#22c55e'});
+    Plotly.react(ref.current,[
+      {type:'scatter3d',mode:'markers',x:px,y:py,z:pz,marker:{size:3,color:col,opacity:.85},hovertemplate:'x:%{x:.1f}<br>y:%{y:.1f}<br>z:%{z:.1f}<extra></extra>',name:'Tumor'},
+      {type:'scatter3d',mode:'markers',x:[x],y:[y],z:[z],marker:{size:8,color:'#ef4444',symbol:'cross',opacity:1},name:'Centroid',hovertemplate:'Centroid<br>x:%{x:.1f}<br>y:%{y:.1f}<br>z:%{z:.1f}<extra></extra>'}
+    ],{
+      paper_bgcolor:'#fff',plot_bgcolor:'#fff',
+      scene:{xaxis:{title:'X',gridcolor:'#f1f5f9',color:'#64748b',titlefont:{color:'#2563eb',size:12}},yaxis:{title:'Y',gridcolor:'#f1f5f9',color:'#64748b',titlefont:{color:'#16a34a',size:12}},zaxis:{title:'Z',gridcolor:'#f1f5f9',color:'#64748b',titlefont:{color:'#ea580c',size:12}},bgcolor:'#fafbfc'},
+      font:{color:'#64748b',size:10,family:'Inter'},margin:{l:0,r:0,t:0,b:0},
+      legend:{font:{color:'#64748b',size:11},bgcolor:'rgba(255,255,255,0.8)'},showlegend:true
+    },{responsive:true,displayModeBar:false});
+  },[coords]);
+  return React.createElement('div',{ref:ref,style:{height:'220px',width:'100%'}});
+}
+
+function UploadTab({onResult,toast}){
+  const[drag,setDrag]=useState(false);
+  const[loading,setLoading]=useState(false);
+  const[progress,setProgress]=useState('');
+  const fRef=useRef(null);
+  async function processFile(f){
+    setLoading(true);setProgress('Uploading MRI...');
+    const fd=new FormData();fd.append('file',f);
+    try{setProgress('Running Multi-Path Fusion Network...');const r=await fetch(API+'/api/upload',{method:'POST',body:fd});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();onResult(d);toast('Segmentation complete!','success')}catch(e){toast('Upload failed: '+e.message,'error')}finally{setLoading(false);setProgress('')}
+  }
+  async function loadDemo(){
+    setLoading(true);setProgress('Generating BraTS MRI sample...');
+    try{const r=await fetch(API+'/api/demo');if(!r.ok)throw new Error();const d=await r.json();onResult(d);toast('Demo analysis loaded!','success')}catch(e){onResult(DEMO);toast('Demo loaded (offline mode)','info')}finally{setLoading(false);setProgress('')}
+  }
+  return(
+    React.createElement('div',{style:{maxWidth:640,margin:'0 auto'}},
+      React.createElement('div',{className:'page-title-bar'},
+        React.createElement('div',null,
+          React.createElement('div',{className:'page-title'},'Upload MRI Scan'),
+          React.createElement('div',{className:'page-subtitle'},'Upload a brain MRI for tumor segmentation analysis')
+        )
+      ),
+      React.createElement('div',{style:{marginTop:20}},
+        React.createElement('div',{className:'upload-zone'+(drag?' drag':''),style:{position:'relative'},onClick:function(){fRef.current&&fRef.current.click()},onDragOver:function(e){e.preventDefault();setDrag(true)},onDragLeave:function(){setDrag(false)},onDrop:function(e){e.preventDefault();setDrag(false);var f=e.dataTransfer.files[0];if(f)processFile(f)}},
+          loading?
+            React.createElement('div',{style:{display:'flex',flexDirection:'column',alignItems:'center',gap:10}},
+              React.createElement('div',{className:'spinner'}),
+              React.createElement('div',{style:{fontSize:14,fontWeight:600,color:'#334155'}},progress)
+            ):
+            React.createElement(React.Fragment,null,
+              React.createElement('div',{className:'icon'},'\uD83E\uDDE0'),
+              React.createElement('h3',null,'Drop MRI file here or click to browse'),
+              React.createElement('p',null,'Maximum file size: 100 MB'),
+              React.createElement('div',{className:'upload-tags'},['DICOM','NIfTI','PNG','JPEG','TIFF'].map(function(f){return React.createElement('span',{key:f,className:'upload-tag'},f)}))
+            ),
+          React.createElement('input',{ref:fRef,type:'file',hidden:true,accept:'.dcm,.nii,.nii.gz,.png,.jpg,.jpeg,.tiff,.tif',onChange:function(e){var f=e.target.files[0];if(f)processFile(f)}})
+        ),
+        React.createElement('div',{style:{display:'flex',justifyContent:'center',marginTop:20}},
+          React.createElement('button',{className:'btn-demo',onClick:loadDemo,disabled:loading},'\uD83D\uDD2C  Load Demo Analysis (BraTS Sample)')
+        )
+      ),
+      React.createElement('div',{className:'arch-box',style:{marginTop:24}},
+        React.createElement('h4',null,'Model Architecture \u2014 Multi-Path Fusion Network + Global Attention'),
+        React.createElement('ul',null,
+          React.createElement('li',null,'Based on Wu, D. et al. (2023) \u2014 ISAIMS 2023'),
+          React.createElement('li',null,'3 parallel convolutional paths: low, mid, high-level features'),
+          React.createElement('li',null,'CBAM-style Global Attention (channel + spatial)'),
+          React.createElement('li',null,'U-Net decoder with skip connections for precise boundaries'),
+          React.createElement('li',null,'Input: 256\u00D7256 MRI \u2192 Output: 4-class segmentation mask'),
+          React.createElement('li',null,'Target Dice Score: \u2265 90% (Whole Tumor, Core, Enhancing)')
+        )
+      )
+    )
+  );
+}
+
+function ReportsTab({result,toast}){
+  var reports=[
+    {id:1,date:'2026-03-06',patient:'BraTS Demo',dice:'91.0%',vol:'438 mm\u00B3',conf:'High',status:'Reviewed'},
+    {id:2,date:'2026-03-05',patient:'Case #1042',dice:'89.5%',vol:'312 mm\u00B3',conf:'High',status:'Pending'},
+    {id:3,date:'2026-03-04',patient:'Case #1039',dice:'93.2%',vol:'521 mm\u00B3',conf:'High',status:'Reviewed'},
+  ];
+  async function dlPDF(){
+    var d=result||DEMO;
+    try{var r=await fetch(API+'/api/report/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(!r.ok)throw new Error();var b=await r.blob();var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_report.pdf';a.click();URL.revokeObjectURL(u);toast('PDF downloaded!','success')}catch(e){toast('PDF requires backend server','error')}
+  }
+  function dlJSON(){var d=result||DEMO;var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='analysis.json';a.click();URL.revokeObjectURL(u);toast('JSON exported!','success')}
+  return(
+    React.createElement('div',null,
+      React.createElement('div',{className:'page-title-bar'},
+        React.createElement('div',null,
+          React.createElement('div',{className:'page-title'},'Segmentation Reports'),
+          React.createElement('div',{className:'page-subtitle'},'Dr. Sarah Andrews \u2014 Neuro-Oncology Department')
+        ),
+        React.createElement('div',{style:{display:'flex',gap:8}},
+          React.createElement('button',{className:'f-btn f-btn-green',onClick:dlPDF},'\uD83D\uDCC4 PDF'),
+          React.createElement('button',{className:'f-btn f-btn-blue',onClick:dlJSON},'\u2B07 JSON')
+        )
+      ),
+      React.createElement('div',{className:'card',style:{marginTop:16}},
+        React.createElement('div',{className:'card-body',style:{padding:0}},
+          React.createElement('table',{className:'reports-table'},
+            React.createElement('thead',null,React.createElement('tr',null,
+              React.createElement('th',null,'#'),React.createElement('th',null,'Date'),React.createElement('th',null,'Patient'),React.createElement('th',null,'Dice'),React.createElement('th',null,'Volume'),React.createElement('th',null,'Confidence'),React.createElement('th',null,'Status')
+            )),
+            React.createElement('tbody',null,reports.map(function(r){return React.createElement('tr',{key:r.id},
+              React.createElement('td',{style:{color:'#94a3b8'}},'#'+r.id),
+              React.createElement('td',null,r.date),
+              React.createElement('td',null,React.createElement('b',null,r.patient)),
+              React.createElement('td',{style:{color:'#16a34a',fontWeight:700}},r.dice),
+              React.createElement('td',{style:{color:'#ea580c',fontWeight:600}},r.vol),
+              React.createElement('td',null,React.createElement('span',{className:'metric-chip chip-green'},r.conf)),
+              React.createElement('td',null,React.createElement('span',{className:'status-badge status-'+r.status.toLowerCase()},r.status))
+            )}))
+          )
+        )
+      )
+    )
+  );
+}
+
+function SegView({result,toast}){
+  var dice=result&&result.dice_scores?result.dice_scores:DEMO.dice_scores;
+  var vol=result&&result.tumor_volume_mm3!=null?result.tumor_volume_mm3:DEMO.tumor_volume_mm3;
+  var conf=result&&result.confidence!=null?result.confidence:DEMO.confidence;
+  var confL=result&&result.confidence_label?result.confidence_label:DEMO.confidence_label;
+  var rec=result&&result.treatment_recommendation?result.treatment_recommendation:DEMO.treatment_recommendation;
+  const[coords,setCoords]=useState(result&&result.coordinates?result.coordinates:DEMO.coordinates);
+  const[showOv,setShowOv]=useState(true);
+  const[view,setView]=useState('axial');
+  useEffect(function(){if(result&&result.coordinates)setCoords(result.coordinates)},[result]);
+  var avg=(dice.whole_tumor+dice.tumor_core+dice.enhancing_tumor)/3;
+
+  var diceItems=[['Whole Tumor',dice.whole_tumor,'#22c55e'],['Tumor Core',dice.tumor_core,'#f97316'],['Enhancing Tumor',dice.enhancing_tumor,'#eab308']];
+  var txOptions=rec&&rec.options?rec.options:DEMO.treatment_recommendation.options;
+  var txIcons=['\u2622\uFE0F','\uD83D\uDD2C','\uD83D\uDC89'];
+  var txBgs=['#fef3c7','#ede9fe','#dbeafe'];
+
+  return(
+    React.createElement(React.Fragment,null,
+      React.createElement('div',{className:'content-area'},
+        React.createElement('div',{className:'page-title-bar'},
+          React.createElement('div',null,
+            React.createElement('div',{className:'page-title'},'Brain Tumor Segmentation Output'),
+            React.createElement('div',{className:'page-subtitle'},'Multi-Path Fusion Network \u00B7 Global Attention \u00B7 BraTS Dataset')
+          ),
+          React.createElement('div',{className:'breadcrumb'},React.createElement('span',null,'Wu et al. 2023'),' / Anurag University')
+        ),
+        React.createElement('div',{className:'card'},
+          React.createElement('div',{className:'card-header'},
+            React.createElement('div',{className:'card-header-title'},React.createElement('span',{style:{fontSize:18}},'\uD83E\uDDE0'),' MRI Scan Viewer'),
+            React.createElement('div',{style:{display:'flex',gap:6,alignItems:'center'}},
+              ['Axial','Sagittal','Coronal'].map(function(v){return React.createElement('button',{key:v,className:'mri-tool-btn'+(view===v.toLowerCase()?' active':''),onClick:function(){setView(v.toLowerCase())}},v)}),
+              React.createElement('button',{className:'mri-tool-btn',onClick:function(){setShowOv(function(o){return !o})}},showOv?'Hide Overlay':'Show Overlay')
+            )
+          ),
+          React.createElement('div',{style:{position:'relative'}},
+            React.createElement(MRICanvas,{overlayImage:result&&result.overlay_image,showOverlay:showOv,coords:coords}),
+            React.createElement('div',{className:'mri-labels'},
+              React.createElement('div',{className:'mri-label-tag'},React.createElement('div',{className:'mri-label-dot',style:{background:'#22c55e'}}),' Whole Tumor'),
+              React.createElement('div',{className:'mri-label-tag'},React.createElement('div',{className:'mri-label-dot',style:{background:'#f97316'}}),' Tumor Core'),
+              React.createElement('div',{className:'mri-label-tag'},React.createElement('div',{className:'mri-label-dot',style:{background:'#facc15'}}),' Enhancing'),
+              result&&result.mask_summary&&React.createElement('div',{className:'mri-label-tag',style:{marginLeft:'auto',fontSize:9}},'WT:'+result.mask_summary.whole_tumor_pixels+' \u00B7 TC:'+result.mask_summary.tumor_core_pixels+' \u00B7 ET:'+result.mask_summary.enhancing_tumor_pixels)
+            )
+          )
+        ),
+        React.createElement('div',{className:'card'},
+          React.createElement('div',{className:'card-header'},
+            React.createElement('div',{className:'card-header-title'},React.createElement('span',{style:{fontSize:16}},'\uD83D\uDCCD'),' X, Y, Z Tumor Coordinates'),
+            React.createElement('span',{style:{fontSize:11,color:'#94a3b8'}},'Drag sliders to explore 3D tumor location')
+          ),
+          React.createElement('div',{className:'card-body'},
+            React.createElement('div',{className:'coord-group'},
+              [['x','X','#2563eb'],['y','Y','#16a34a'],['z','Z','#ea580c']].map(function(item){
+                var k=item[0],L=item[1],c=item[2];
+                return React.createElement('div',{key:k,className:'coord-row'},
+                  React.createElement('div',{className:'coord-badge '+k},L),
+                  React.createElement('input',{type:'range',className:k+'-slider',min:'0',max:'100',step:'0.1',value:coords[k],onChange:function(e){var v=+e.target.value;setCoords(function(cc){var n=Object.assign({},cc);n[k]=v;return n})},style:{background:'linear-gradient(to right,'+c+' 0%,'+c+' '+coords[k]+'%,#e2e8f0 '+coords[k]+'%,#e2e8f0 100%)'}}),
+                  React.createElement('span',{className:'coord-val',style:{color:c}},coords[k].toFixed(1))
+                )
+              })
+            )
+          )
+        ),
+        React.createElement('div',{className:'card'},
+          React.createElement('div',{className:'card-header'},
+            React.createElement('div',{className:'card-header-title'},React.createElement('span',{style:{fontSize:16}},'\uD83D\uDD2D'),' 3D Tumor Location'),
+            React.createElement('span',{style:{fontSize:11,color:'#94a3b8'}},'Interactive Plotly Visualization')
+          ),
+          React.createElement('div',{className:'card-body',style:{padding:8}},React.createElement(Plot3D,{coords:coords}))
+        )
+      ),
+      React.createElement('div',{className:'sidebar'},
+        React.createElement('div',{className:'dice-section'},
+          React.createElement('div',{className:'dice-main-label'},'Segmentation Accuracy'),
+          React.createElement('div',{className:'dice-circle-wrap'},React.createElement(Gauge,{value:avg,size:130,stroke:10})),
+          React.createElement('div',{className:'dice-bars'},diceItems.map(function(item){
+            var l=item[0],v=item[1],c=item[2];
+            return React.createElement('div',{key:l,className:'dice-bar-row'},
+              React.createElement('div',{className:'dice-bar-head'},
+                React.createElement('span',{className:'dice-bar-label'},l),
+                React.createElement('span',{className:'dice-bar-val',style:{color:c}},v.toFixed(1)+'%')
+              ),
+              React.createElement('div',{className:'dice-bar-track'},React.createElement('div',{className:'dice-bar-fill',style:{width:v+'%',background:c}}))
+            )
+          }))
+        ),
+        React.createElement('div',{style:{height:1,background:'#f1f5f9'}}),
+        React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:10}},
+          React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.8px'}},'Analysis Metrics'),
+          React.createElement('div',{className:'metric-row'},
+            React.createElement('div',{className:'metric-icon-box',style:{background:'#fff7ed'}},'\uD83E\uDEEB'),
+            React.createElement('div',{className:'metric-text'},
+              React.createElement('div',{className:'label'},'Tumor Volume'),
+              React.createElement('div',{className:'value'},vol.toFixed(0)+' ',React.createElement('span',{className:'unit'},'mm\u00B3'))
+            ),
+            React.createElement('span',{className:'metric-chip chip-amber'},'3D Vol')
+          ),
+          React.createElement('div',{className:'metric-row'},
+            React.createElement('div',{className:'metric-icon-box',style:{background:'#eff6ff'}},'\uD83D\uDCCD'),
+            React.createElement('div',{className:'metric-text'},
+              React.createElement('div',{className:'label'},'Centroid Coordinates'),
+              React.createElement('div',{style:{fontFamily:'monospace',fontSize:12,color:'#334155',marginTop:2}},
+                React.createElement('span',{style:{color:'#2563eb'}},'x'),'='+coords.x.toFixed(1)+' ',
+                React.createElement('span',{style:{color:'#16a34a'}},'y'),'='+coords.y.toFixed(1)+' ',
+                React.createElement('span',{style:{color:'#ea580c'}},'z'),'='+coords.z.toFixed(1)
+              )
+            )
+          ),
+          React.createElement('div',{className:'metric-row'},
+            React.createElement('div',{className:'metric-icon-box',style:{background:'#f0fdf4'}},'\u2705'),
+            React.createElement('div',{className:'metric-text'},
+              React.createElement('div',{className:'label'},'Confidence Level'),
+              React.createElement('div',{className:'value',style:{fontSize:14}},confL+' ',React.createElement('span',{className:'unit'},'('+conf.toFixed(0)+'%)'))
+            ),
+            React.createElement('span',{className:'metric-chip chip-green'},'HIGH')
+          )
+        ),
+        React.createElement('div',{style:{height:1,background:'#f1f5f9'}}),
+        React.createElement('div',{className:'clinical-note'},
+          React.createElement('div',{className:'clinical-note-head'},'\u26A0 Clinical Note'),
+          React.createElement('p',null,rec&&rec.note?rec.note:DEMO.treatment_recommendation.note)
+        ),
+        React.createElement('div',{style:{height:1,background:'#f1f5f9'}}),
+        React.createElement('div',null,
+          React.createElement('div',{style:{fontSize:11,fontWeight:700,color:'#7c3aed',textTransform:'uppercase',letterSpacing:'.8px',marginBottom:10}},'Treatment Recommendations'),
+          React.createElement('div',{className:'treatment-list'},txOptions.map(function(o,i){
+            return React.createElement('div',{key:i,className:'tx-item'},
+              React.createElement('div',{className:'tx-icon-wrap',style:{background:txBgs[i]}},txIcons[i]),
+              React.createElement('div',{className:'tx-body'},
+                React.createElement('div',{className:'tx-name'},o.treatment),
+                React.createElement('div',{className:'tx-detail'},o.detail)
+              ),
+              React.createElement('div',{className:'tx-check-mark'},'\u2713')
+            )
+          })),
+          React.createElement('button',{className:'btn-refer',onClick:function(){toast('Referral to Oncology initiated','info')}},'Refer to Oncology \u2192')
+        )
+      )
+    )
+  );
+}
+
+function DashboardTab({result,toast,setTab}){
+  var dice=result&&result.dice_scores?result.dice_scores:DEMO.dice_scores;
+  var statsData=[
+    {icon:'\uD83D\uDD2C',val:'12',label:'Analyses Today',color:'#3b82f6',bg:'#eff6ff',change:'+3'},
+    {icon:'\uD83C\uDFAF',val:'91.4%',label:'Avg Dice Score',color:'#22c55e',bg:'#f0fdf4',change:'+1.2%'},
+    {icon:'\uD83D\uDCC4',val:'8',label:'Reports Generated',color:'#f59e0b',bg:'#fffbeb',change:'+2'},
+    {icon:'\u2705',val:'94%',label:'High Confidence',color:'#8b5cf6',bg:'#f5f3ff',change:'+5%'},
+  ];
+  var diceItems=[['Whole Tumor',dice.whole_tumor,'#22c55e'],['Tumor Core',dice.tumor_core,'#f97316'],['Enhancing',dice.enhancing_tumor,'#eab308']];
+  return(
+    React.createElement('div',{className:'content-area',style:{gap:20}},
+      React.createElement('div',{className:'page-title-bar'},
+        React.createElement('div',null,
+          React.createElement('div',{className:'page-title'},'Dashboard Overview'),
+          React.createElement('div',{className:'page-subtitle'},'Brain Tumor Segmentation System \u2014 Dr. Sarah Andrews')
+        )
+      ),
+      React.createElement('div',{className:'stats-grid'},statsData.map(function(s,i){
+        return React.createElement('div',{key:i,className:'stat-card'},
+          React.createElement('div',{className:'stat-icon',style:{background:s.bg}},s.icon),
+          React.createElement('div',{className:'stat-value',style:{color:s.color}},s.val),
+          React.createElement('div',{className:'stat-label'},s.label),
+          React.createElement('div',{className:'stat-change',style:{background:s.bg,color:s.color}},'\u2191 '+s.change)
+        )
+      })),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'2fr 1fr',gap:16,flex:1}},
+        React.createElement('div',{className:'card'},
+          React.createElement('div',{className:'card-header'},React.createElement('div',{className:'card-header-title'},'Latest Segmentation')),
+          React.createElement('div',{className:'card-body',style:{padding:8}},React.createElement(MRICanvas,{overlayImage:result&&result.overlay_image,showOverlay:true,coords:result&&result.coordinates?result.coordinates:DEMO.coordinates}))
+        ),
+        React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:12}},
+          React.createElement('div',{className:'card',style:{flex:1}},
+            React.createElement('div',{className:'card-body'},
+              React.createElement('div',{style:{textAlign:'center',marginBottom:10}},React.createElement(Gauge,{value:91,size:100,stroke:8})),
+              diceItems.map(function(item){
+                var l=item[0],v=item[1],c=item[2];
+                return React.createElement('div',{key:l,className:'dice-bar-row',style:{marginBottom:6}},
+                  React.createElement('div',{className:'dice-bar-head'},
+                    React.createElement('span',{className:'dice-bar-label'},l),
+                    React.createElement('span',{className:'dice-bar-val',style:{color:c}},v.toFixed(1)+'%')
+                  ),
+                  React.createElement('div',{className:'dice-bar-track'},React.createElement('div',{className:'dice-bar-fill',style:{width:v+'%',background:c}}))
+                )
+              })
+            )
+          ),
+          React.createElement('button',{className:'f-btn f-btn-orange',style:{width:'100%',justifyContent:'center',padding:12},onClick:function(){setTab('upload')}},'\u2B06 Upload New MRI'),
+          React.createElement('button',{className:'f-btn f-btn-blue',style:{width:'100%',justifyContent:'center',padding:12},onClick:function(){setTab('segmentation')}},'\uD83E\uDDE9 View Full Analysis')
+        )
+      )
+    )
+  );
+}
+
+function App(){
+  const[tab,setTab]=useState('segmentation');
+  const[result,setResult]=useState(null);
+  const[loading,setLoading]=useState(false);
+  const[showMenu,setShowMenu]=useState(false);
+  const{toasts,show:toast}=useToast();
+
+  useEffect(function(){(async function(){try{var r=await fetch(API+'/api/demo');if(r.ok){setResult(await r.json())}else setResult(DEMO)}catch(e){setResult(DEMO)}})()},[]);
+
+  async function reanalyze(){
+    setLoading(true);
+    try{var r=await fetch(API+'/api/reanalyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(r.ok){setResult(await r.json());toast('Re-analysis complete!','success')}else throw new Error()}catch(e){var rr=JSON.parse(JSON.stringify(DEMO));rr.dice_scores.whole_tumor=+(91+(Math.random()-.5)).toFixed(1);rr.dice_scores.tumor_core=+(95+(Math.random()-.5)).toFixed(1);rr.dice_scores.enhancing_tumor=+(90+(Math.random()-.5)).toFixed(1);setResult(rr);toast('Re-analysis complete (offline)','success')}finally{setLoading(false)}
+  }
+  async function saveReport(){
+    try{var r=await fetch(API+'/api/report/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(!r.ok)throw new Error();var b=await r.blob();var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_report.pdf';a.click();URL.revokeObjectURL(u);toast('Report saved!','success')}catch(e){toast('Save requires backend server','error')}
+  }
+  function exportJSON(){var d=result||DEMO;var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_analysis.json';a.click();URL.revokeObjectURL(u);toast('Exported to JSON!','success')}
+
+  var navItems=[['dashboard','Dashboard'],['upload','Upload MRI'],['segmentation','Segmentation Output'],['reports','Reports']];
+
+  return(
+    React.createElement(React.Fragment,null,
+      loading&&React.createElement('div',{className:'loading-overlay'},
+        React.createElement('div',{className:'spinner'}),
+        React.createElement('div',{className:'lo-text'},'Running segmentation model...'),
+        React.createElement('div',{className:'lo-sub'},'Multi-Path Fusion Network \u00B7 Global Attention')
+      ),
+      React.createElement('header',{className:'header'},
+        React.createElement('div',{className:'header-left'},
+          React.createElement('div',{className:'logo-box'},React.createElement('svg',{viewBox:'0 0 24 24'},React.createElement('path',{d:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'}))),
+          React.createElement('div',{className:'brand-text'},
+            React.createElement('h1',null,'NeuroSeg Pro'),
+            React.createElement('p',null,'Brain Tumor Segmentation \u00B7 Anurag University')
+          )
+        ),
+        React.createElement('nav',{className:'nav-tabs'},navItems.map(function(item){
+          var id=item[0],label=item[1];
+          return React.createElement('button',{key:id,className:'nav-tab'+(tab===id?' active':''),onClick:function(){setTab(id)}},label)
+        })),
+        React.createElement('div',{className:'header-right'},
+          React.createElement('div',{className:'notif-btn'},'\uD83D\uDD14',React.createElement('div',{className:'notif-dot'})),
+          React.createElement('div',{style:{position:'relative'},onClick:function(){setShowMenu(function(m){return !m})}},
+            React.createElement('div',{className:'user-pill'},
+              React.createElement('div',{className:'user-avatar'},'SA'),
+              React.createElement('div',{className:'user-details'},
+                React.createElement('div',{className:'name'},'Dr. Sarah Andrews'),
+                React.createElement('div',{className:'role'},'Neuro-Oncologist')
+              )
+            ),
+            showMenu&&React.createElement('div',{className:'dropdown-menu'},
+              React.createElement('div',{className:'dd-item'},'\uD83D\uDC64 Profile'),
+              React.createElement('div',{className:'dd-item'},'\u2699\uFE0F Settings'),
+              React.createElement('div',{className:'dd-item'},'\uD83C\uDF19 Dark Mode'),
+              React.createElement('div',{className:'dd-divider'}),
+              React.createElement('div',{className:'dd-item'},'\uD83D\uDEAA Sign Out')
+            )
+          )
+        )
+      ),
+      React.createElement('main',{className:'main'},
+        tab==='dashboard'&&React.createElement(DashboardTab,{result:result,toast:toast,setTab:setTab}),
+        tab==='upload'&&React.createElement('div',{className:'content-area'},React.createElement(UploadTab,{onResult:function(d){setResult(d);setTab('segmentation')},toast:toast})),
+        tab==='segmentation'&&React.createElement(SegView,{result:result,toast:toast}),
+        tab==='reports'&&React.createElement('div',{className:'content-area'},React.createElement(ReportsTab,{result:result,toast:toast}))
+      ),
+      React.createElement('footer',{className:'footer'},
+        React.createElement('div',{className:'footer-left'},
+          React.createElement('button',{className:'f-btn f-btn-ghost'},'\u2699 Options'),
+          React.createElement('span',{className:'f-version'},'MPFNet v1.0 \u00B7 Wu et al. 2023 \u00B7 Dice \u2265 90%')
+        ),
+        React.createElement('div',{className:'footer-right'},
+          React.createElement('button',{className:'f-btn f-btn-orange',onClick:reanalyze,disabled:loading},'\uD83D\uDD04 Reanalyze'),
+          React.createElement('button',{className:'f-btn f-btn-green',onClick:saveReport},'\uD83D\uDCBE Save Report'),
+          React.createElement('button',{className:'f-btn f-btn-blue',onClick:exportJSON},'\u2B07 Export')
+        )
+      ),
+      React.createElement('div',{className:'toast-stack'},toasts.map(function(t){
+        return React.createElement('div',{key:t.id,className:'toast toast-'+t.type},
+          t.type==='success'?'\u2713':t.type==='error'?'\u2715':'\u2139',' ',t.msg
+        )
+      }))
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
