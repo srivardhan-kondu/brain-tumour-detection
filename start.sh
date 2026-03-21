@@ -25,8 +25,8 @@ if [ ! -d "$VENV_DIR" ]; then
 fi
 
 echo "📦 Installing Python dependencies..."
-$PIP install --quiet --upgrade pip
-$PIP install --quiet \
+"$PIP" install --quiet --upgrade pip
+"$PIP" install --quiet \
   fastapi \
   "uvicorn[standard]" \
   python-multipart \
@@ -43,7 +43,7 @@ echo "✅ Dependencies installed."
 echo ""
 echo "🔎 Running model sanity check..."
 cd "$BACKEND_DIR"
-$PYTHON -c "
+"$PYTHON" -c "
 from model import MultiPathFusionNet
 import torch
 m = MultiPathFusionNet(in_channels=1, num_classes=4)
@@ -60,4 +60,4 @@ echo "   Frontend: http://localhost:8000"
 echo "   API Docs: http://localhost:8000/docs"
 echo ""
 cd "$BACKEND_DIR"
-$UVICORN main:app --reload --host 0.0.0.0 --port 8000
+"$UVICORN" main:app --reload --host 0.0.0.0 --port 8000
