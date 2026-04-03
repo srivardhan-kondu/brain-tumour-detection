@@ -505,50 +505,161 @@ function UploadTab({onResult,toast}){
   );
 }
 
-function ReportsTab({result,toast,user}){
-  var d=result||DEMO;
-  var dice=d.dice_scores||DEMO.dice_scores;
-  var avgDice=((dice.whole_tumor+dice.tumor_core+dice.enhancing_tumor)/3).toFixed(1);
-  var vol=d.tumor_volume_mm3!=null?d.tumor_volume_mm3+' mm\u00B3':'—';
-  var conf=d.confidence>=90?'High':d.confidence>=75?'Medium':'Low';
-  var reports=[
-    {id:1,date:new Date().toISOString().slice(0,10),patient:'Current Analysis',dice:avgDice+'%',vol:vol,conf:conf,status:'Active'},
-  ];
-  async function dlPDF(){
-    var d=result||DEMO;
-    try{var r=await fetch(API+'/api/report/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});if(!r.ok)throw new Error();var b=await r.blob();var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_report.pdf';a.click();URL.revokeObjectURL(u);toast('PDF downloaded!','success')}catch(e){toast('PDF requires backend server','error')}
+function ReportsTab({result,toast,user,reportHistory}){
+  var h=reportHistory||[];
+  var _s=useState(null),expandedId=_s[0],setExpandedId=_s[1];
+  function statusIcon(val,thr){return val>=thr?'\u2713 PASS':val>0?'\u2717 BELOW':'\u2014'}
+  function statusColor(val,thr){return val>=thr?'#16a34a':val>0?'#dc2626':'#94a3b8'}
+  var rStyle={border:'1px solid #e2e8f0',borderRadius:12,background:'#fff',padding:32,maxWidth:820,margin:'0 auto'};
+  var secStyle={color:'#0056B3',fontSize:14,fontWeight:700,margin:'20px 0 8px',borderBottom:'2px solid #0056B3',paddingBottom:4};
+  var tblStyle={width:'100%',borderCollapse:'collapse',fontSize:12};
+  var cellStyle={padding:'7px 10px',borderBottom:'1px solid #e2e8f0'};
+  var labelCell=Object.assign({},cellStyle,{fontWeight:600,color:'#333',width:'35%'});
+  var valCell=Object.assign({},cellStyle,{color:'#555'});
+
+  function renderReport(d,ts){
+    var dice=d.region_confidence||d.dice_scores||DEMO.dice_scores;
+    var vol=d.tumor_volume_mm3!=null?d.tumor_volume_mm3+' mm\u00B3':'\u2014';
+    var conf=d.confidence>=90?'High':d.confidence>=75?'Medium':'Low';
+    var coords=d.coordinates||{x:0,y:0,z:0};
+    var rec=d.treatment_recommendation||{};
+    var dt=new Date(ts);
+    var dateStr=dt.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    var timeStr=dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    var reportId='BTR-'+dt.getFullYear()+String(dt.getMonth()+1).padStart(2,'0')+String(dt.getDate()).padStart(2,'0')+String(dt.getHours()).padStart(2,'0')+String(dt.getMinutes()).padStart(2,'0');
+    return React.createElement('div',{style:rStyle},
+      React.createElement('h2',{style:{color:'#0056B3',fontSize:17,fontWeight:700,textAlign:'center',margin:0}},'MULTI-PATH FUSION NETWORK BASED GLOBAL ATTENTION'),
+      React.createElement('h3',{style:{fontSize:12,fontWeight:400,color:'#555',textAlign:'center',marginTop:2}},'Brain Tumor Segmentation \u2014 Output Report'),
+      React.createElement('hr',{style:{border:'none',borderTop:'2px solid #0056B3',margin:'10px 0'}}),
+      React.createElement('div',{style:secStyle},'Patient & Study Information'),
+      React.createElement('table',{style:tblStyle},
+        React.createElement('tbody',null,
+          React.createElement('tr',null,
+            React.createElement('td',{style:labelCell},'Attending Physician'),React.createElement('td',{style:valCell},user&&user.name?user.name:'Dr. Sarah Andrews'),
+            React.createElement('td',{style:labelCell},'Date'),React.createElement('td',{style:valCell},dateStr)
+          ),
+          React.createElement('tr',{style:{background:'#f8fafc'}},
+            React.createElement('td',{style:labelCell},'Department'),React.createElement('td',{style:valCell},user&&user.role?user.role:'Neuro-Oncology'),
+            React.createElement('td',{style:labelCell},'Time'),React.createElement('td',{style:valCell},timeStr)
+          ),
+          React.createElement('tr',null,
+            React.createElement('td',{style:labelCell},'Report ID'),React.createElement('td',{style:valCell},reportId),
+            React.createElement('td',{style:labelCell},'Modality'),React.createElement('td',{style:valCell},'MRI Brain')
+          ),
+          React.createElement('tr',{style:{background:'#f8fafc'}},
+            React.createElement('td',{style:labelCell},'Patient Study'),React.createElement('td',{style:valCell},'BraTS Analysis'),
+            React.createElement('td',{style:labelCell},'Software'),React.createElement('td',{style:valCell},'MPFNet v1.0')
+          )
+        )
+      ),
+      React.createElement('div',{style:secStyle},'Segmentation Performance Metrics'),
+      React.createElement('table',{style:tblStyle},
+        React.createElement('thead',null,
+          React.createElement('tr',{style:{background:'#0056B3'}},
+            React.createElement('th',{style:{padding:'8px 10px',color:'#fff',textAlign:'left',fontWeight:600}},'Metric'),
+            React.createElement('th',{style:{padding:'8px 10px',color:'#fff',textAlign:'center',fontWeight:600}},'Value'),
+            React.createElement('th',{style:{padding:'8px 10px',color:'#fff',textAlign:'center',fontWeight:600}},'Benchmark'),
+            React.createElement('th',{style:{padding:'8px 10px',color:'#fff',textAlign:'center',fontWeight:600}},'Status')
+          )
+        ),
+        React.createElement('tbody',null,
+          [
+            ['Confidence \u2013 Whole Tumor',dice.whole_tumor.toFixed(1)+'%','\u2265 90%',90],
+            ['Confidence \u2013 Tumor Core',dice.tumor_core.toFixed(1)+'%','\u2265 90%',90],
+            ['Confidence \u2013 Enhancing Tumor',dice.enhancing_tumor.toFixed(1)+'%','\u2265 85%',85],
+            ['Tumor Volume',vol,'\u2014',null],
+            ['Confidence Level',conf+' ('+d.confidence+'%)','\u2265 85%',85],
+            ['Centroid Coordinates','x='+coords.x+', y='+coords.y+', z='+coords.z,'\u2014',null],
+          ].map(function(row,i){
+            var val=parseFloat(row[1]);
+            return React.createElement('tr',{key:i,style:{background:i%2?'#ebf5ff':'#fff'}},
+              React.createElement('td',{style:Object.assign({},cellStyle,{fontWeight:600})},row[0]),
+              React.createElement('td',{style:Object.assign({},cellStyle,{textAlign:'center'})},row[1]),
+              React.createElement('td',{style:Object.assign({},cellStyle,{textAlign:'center',color:'#888'})},row[2]),
+              React.createElement('td',{style:Object.assign({},cellStyle,{textAlign:'center',fontWeight:700,color:row[3]?statusColor(val,row[3]):'#94a3b8'})},row[3]?statusIcon(val,row[3]):'\u2014')
+            )
+          })
+        )
+      ),
+      d.overlay_image&&React.createElement('div',null,
+        React.createElement('div',{style:secStyle},'Segmentation Visualization'),
+        React.createElement('div',{style:{textAlign:'center',margin:'12px 0'}},
+          React.createElement('img',{src:'data:image/png;base64,'+d.overlay_image,alt:'Segmentation Overlay',style:{maxWidth:'100%',borderRadius:8,border:'1px solid #e2e8f0'}})
+        )
+      ),
+      React.createElement('div',{style:secStyle},'Clinical Recommendation'),
+      rec.note&&React.createElement('div',{style:{background:'#FFF3CD',border:'1px solid #FFE69C',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#1a1a1a',margin:'8px 0'}},'\u26A0\uFE0F '+rec.note),
+      rec.options&&rec.options.length>0&&React.createElement('table',{style:Object.assign({},tblStyle,{marginTop:8})},
+        React.createElement('thead',null,
+          React.createElement('tr',{style:{background:'#FF8C00'}},
+            React.createElement('th',{style:{padding:'8px 10px',color:'#fff',textAlign:'left',fontWeight:600}},'Treatment'),
+            React.createElement('th',{style:{padding:'8px 10px',color:'#fff',textAlign:'left',fontWeight:600}},'Details')
+          )
+        ),
+        React.createElement('tbody',null,
+          rec.options.map(function(o,i){return React.createElement('tr',{key:i,style:{background:i%2?'#FFF3CD':'#fff'}},
+            React.createElement('td',{style:Object.assign({},cellStyle,{fontWeight:600})},o.treatment),
+            React.createElement('td',{style:cellStyle},o.detail)
+          )})
+        )
+      ),
+      React.createElement('p',{style:{color:'#8B0000',fontWeight:700,fontSize:12,marginTop:12}},'\u27A4 Refer to Oncology for further management.'),
+      React.createElement('hr',{style:{border:'none',borderTop:'1px solid #ddd',margin:'20px 0 8px'}}),
+      React.createElement('p',{style:{fontSize:9,color:'#999',textAlign:'center',margin:0}},'Generated on '+dateStr+' at '+timeStr+' \u2014 Multi-Path Fusion Network Based Global Attention for Brain Tumor Segmentation')
+    );
   }
-  function dlJSON(){var d=result||DEMO;var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='analysis.json';a.click();URL.revokeObjectURL(u);toast('JSON exported!','success')}
+
   return(
     React.createElement('div',null,
       React.createElement('div',{className:'page-title-bar'},
         React.createElement('div',null,
-          React.createElement('div',{className:'page-title'},'Segmentation Reports'),
-          React.createElement('div',{className:'page-subtitle'},(user&&user.name?user.name:'Doctor')+' \u2014 '+(user&&user.role?user.role:'Neuro-Oncology Department'))
-        ),
-        React.createElement('div',{style:{display:'flex',gap:8}},
-          React.createElement('button',{className:'f-btn f-btn-green',onClick:dlPDF},'\uD83D\uDCC4 PDF'),
-          React.createElement('button',{className:'f-btn f-btn-blue',onClick:dlJSON},'\u2B07 JSON')
+          React.createElement('div',{className:'page-title'},'Analysis Reports'),
+          React.createElement('div',{className:'page-subtitle'},(user&&user.name?user.name:'Doctor')+' \u2014 '+h.length+' report'+(h.length!==1?'s':'')+' stored')
         )
       ),
-      React.createElement('div',{className:'card',style:{marginTop:16}},
-        React.createElement('div',{className:'card-body',style:{padding:0}},
-          React.createElement('table',{className:'reports-table'},
-            React.createElement('thead',null,React.createElement('tr',null,
-              React.createElement('th',null,'#'),React.createElement('th',null,'Date'),React.createElement('th',null,'Patient'),React.createElement('th',null,'Dice'),React.createElement('th',null,'Volume'),React.createElement('th',null,'Confidence'),React.createElement('th',null,'Status')
-            )),
-            React.createElement('tbody',null,reports.map(function(r){return React.createElement('tr',{key:r.id},
-              React.createElement('td',{style:{color:'#94a3b8'}},'#'+r.id),
-              React.createElement('td',null,r.date),
-              React.createElement('td',null,React.createElement('b',null,r.patient)),
-              React.createElement('td',{style:{color:'#16a34a',fontWeight:700}},r.dice),
-              React.createElement('td',{style:{color:'#ea580c',fontWeight:600}},r.vol),
-              React.createElement('td',null,React.createElement('span',{className:'metric-chip chip-green'},r.conf)),
-              React.createElement('td',null,React.createElement('span',{className:'status-badge status-'+r.status.toLowerCase()},r.status))
-            )}))
-          )
+      h.length===0?
+        React.createElement('div',{style:{textAlign:'center',padding:'60px 20px',color:'#94a3b8'}},
+          React.createElement('div',{style:{fontSize:48,marginBottom:12}},'\uD83D\uDCCB'),
+          React.createElement('div',{style:{fontSize:16,fontWeight:600}},'No reports yet'),
+          React.createElement('div',{style:{fontSize:13,marginTop:4}},'Upload an MRI scan to generate your first report')
+        ):
+        React.createElement('div',{style:{maxWidth:860,margin:'0 auto',display:'flex',flexDirection:'column',gap:12,marginTop:12}},
+          h.map(function(item,idx){
+            var d=item;
+            var dice=d.region_confidence||d.dice_scores||DEMO.dice_scores;
+            var avgConf=((dice.whole_tumor+dice.tumor_core+dice.enhancing_tumor)/3).toFixed(1);
+            var confLabel=d.confidence>=90?'High':d.confidence>=75?'Medium':'Low';
+            var cls=d.classification||'Brain Tumor';
+            var dt=new Date(item._ts);
+            var dateStr=dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+            var timeStr=dt.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+            var isOpen=expandedId===item._id;
+            var confColor=d.confidence>=90?'#16a34a':d.confidence>=75?'#f59e0b':'#dc2626';
+            return React.createElement('div',{key:item._id,style:{border:'1px solid '+(isOpen?'#0056B3':'#e2e8f0'),borderRadius:12,background:'#fff',overflow:'hidden',transition:'border-color 0.2s'}},
+              React.createElement('div',{onClick:function(){setExpandedId(isOpen?null:item._id)},style:{padding:'14px 20px',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'space-between',background:isOpen?'#f0f7ff':'#fff',transition:'background 0.2s'}},
+                React.createElement('div',{style:{display:'flex',alignItems:'center',gap:14}},
+                  React.createElement('div',{style:{width:40,height:40,borderRadius:8,background:'linear-gradient(135deg,#0056B3,#0078D4)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:700,fontSize:14}},String(h.length-idx)),
+                  React.createElement('div',null,
+                    React.createElement('div',{style:{fontWeight:600,fontSize:14,color:'#1e293b'}},cls),
+                    React.createElement('div',{style:{fontSize:12,color:'#64748b',marginTop:2}},dateStr+' at '+timeStr)
+                  )
+                ),
+                React.createElement('div',{style:{display:'flex',alignItems:'center',gap:16}},
+                  React.createElement('div',{style:{textAlign:'right'}},
+                    React.createElement('div',{style:{fontSize:12,color:'#64748b'}},'Confidence'),
+                    React.createElement('div',{style:{fontSize:15,fontWeight:700,color:confColor}},d.confidence+'%')
+                  ),
+                  React.createElement('div',{style:{textAlign:'right'}},
+                    React.createElement('div',{style:{fontSize:12,color:'#64748b'}},'Avg Score'),
+                    React.createElement('div',{style:{fontSize:15,fontWeight:700,color:'#0056B3'}},avgConf+'%')
+                  ),
+                  React.createElement('span',{style:{fontSize:18,color:'#64748b',transition:'transform 0.2s',transform:isOpen?'rotate(180deg)':'rotate(0deg)',display:'inline-block'}},'\u25BC')
+                )
+              ),
+              isOpen&&React.createElement('div',{style:{padding:'0 20px 20px'}},renderReport(d,item._ts))
+            );
+          })
         )
-      )
     )
   );
 }
@@ -781,7 +892,7 @@ function ModelInfoTab(){
 }
 
 function SegView({result,toast}){
-  var dice=result&&result.dice_scores?result.dice_scores:DEMO.dice_scores;
+  var dice=result&&(result.region_confidence||result.dice_scores)||DEMO.dice_scores;
   var vol=result&&result.tumor_volume_mm3!=null?result.tumor_volume_mm3:DEMO.tumor_volume_mm3;
   var conf=result&&result.confidence!=null?result.confidence:DEMO.confidence;
   var confL=result&&result.confidence_label?result.confidence_label:DEMO.confidence_label;
@@ -817,12 +928,7 @@ function SegView({result,toast}){
           ),
           React.createElement('div',{style:{position:'relative'}},
             React.createElement(MRICanvas,{overlayImage:result&&result.overlay_image,showOverlay:showOv,coords:coords}),
-            React.createElement('div',{className:'mri-labels'},
-              React.createElement('div',{className:'mri-label-tag'},React.createElement('div',{className:'mri-label-dot',style:{background:'#22c55e'}}),' Whole Tumor'),
-              React.createElement('div',{className:'mri-label-tag'},React.createElement('div',{className:'mri-label-dot',style:{background:'#f97316'}}),' Tumor Core'),
-              React.createElement('div',{className:'mri-label-tag'},React.createElement('div',{className:'mri-label-dot',style:{background:'#facc15'}}),' Enhancing'),
-              result&&result.mask_summary&&React.createElement('div',{className:'mri-label-tag',style:{marginLeft:'auto',fontSize:9}},'WT:'+result.mask_summary.whole_tumor_pixels+' \u00B7 TC:'+result.mask_summary.tumor_core_pixels+' \u00B7 ET:'+result.mask_summary.enhancing_tumor_pixels)
-            )
+
           )
         ),
         React.createElement('div',{className:'card'},
@@ -923,7 +1029,7 @@ function SegView({result,toast}){
 }
 
 function DashboardTab({result,toast,setTab,user}){
-  var dice=result&&result.dice_scores?result.dice_scores:DEMO.dice_scores;
+  var dice=result&&(result.region_confidence||result.dice_scores)||DEMO.dice_scores;
   var avgDice=((dice.whole_tumor+dice.tumor_core+dice.enhancing_tumor)/3).toFixed(1);
   var conf=result&&result.confidence?result.confidence:91;
   /* Read real counts from sessionStorage */
@@ -960,7 +1066,7 @@ function DashboardTab({result,toast,setTab,user}){
         React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:12}},
           React.createElement('div',{className:'card',style:{flex:1}},
             React.createElement('div',{className:'card-body'},
-              React.createElement('div',{style:{textAlign:'center',marginBottom:10}},React.createElement(Gauge,{value:91,size:100,stroke:8})),
+              React.createElement('div',{style:{textAlign:'center',marginBottom:10}},React.createElement(Gauge,{value:parseFloat(avgDice),size:100,stroke:8})),
               diceItems.map(function(item){
                 var l=item[0],v=item[1],c=item[2];
                 return React.createElement('div',{key:l,className:'dice-bar-row',style:{marginBottom:6}},
@@ -986,18 +1092,20 @@ function App(){
   const[user,setUser]=useState(stored?stored.user:null);
   const[tab,setTab]=useState('segmentation');
   const[result,setResult]=useState(null);
+  const[reportHistory,setReportHistory]=useState([]);
   const[loading,setLoading]=useState(false);
   const[showMenu,setShowMenu]=useState(false);
   const{toasts,show:toast}=useToast();
+  function addToHistory(d){if(d)setReportHistory(function(prev){return[Object.assign({},d,{_ts:new Date().toISOString(),_id:Date.now()})].concat(prev)})}
 
   function handleLogin(u){setUser(u)}
   function handleLogout(){clearAuth();setUser(null);setResult(null);setShowMenu(false)}
 
-  useEffect(function(){if(!user)return;(async function(){try{var r=await fetch(API+'/api/demo');if(r.ok){var d=await r.json();sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(d)}else setResult(DEMO)}catch(e){setResult(DEMO)}})()},[user]);
+  useEffect(function(){if(!user)return;(async function(){try{var r=await fetch(API+'/api/demo');if(r.ok){var d=await r.json();sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(d);addToHistory(d)}else{setResult(DEMO);addToHistory(DEMO)}}catch(e){setResult(DEMO);addToHistory(DEMO)}})()},[user]);
 
   async function reanalyze(){
     setLoading(true);
-    try{var r=await fetch(API+'/api/reanalyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(r.ok){sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(await r.json());toast('Re-analysis complete!','success')}else throw new Error()}catch(e){var rr=JSON.parse(JSON.stringify(DEMO));rr.dice_scores.whole_tumor=+(91+(Math.random()-.5)).toFixed(1);rr.dice_scores.tumor_core=+(95+(Math.random()-.5)).toFixed(1);rr.dice_scores.enhancing_tumor=+(90+(Math.random()-.5)).toFixed(1);setResult(rr);toast('Re-analysis complete (offline)','success')}finally{setLoading(false)}
+    try{var r=await fetch(API+'/api/reanalyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(r.ok){var rd=await r.json();sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(rd);addToHistory(rd);toast('Re-analysis complete!','success')}else throw new Error()}catch(e){var rr=JSON.parse(JSON.stringify(DEMO));rr.dice_scores.whole_tumor=+(91+(Math.random()-.5)).toFixed(1);rr.dice_scores.tumor_core=+(95+(Math.random()-.5)).toFixed(1);rr.dice_scores.enhancing_tumor=+(90+(Math.random()-.5)).toFixed(1);setResult(rr);addToHistory(rr);toast('Re-analysis complete (offline)','success')}finally{setLoading(false)}
   }
   async function saveReport(){
     try{var r=await fetch(API+'/api/report/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(!r.ok)throw new Error();var b=await r.blob();var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_report.pdf';a.click();URL.revokeObjectURL(u);sessionStorage.setItem('bt_reports',String(parseInt(sessionStorage.getItem('bt_reports')||'0',10)+1));toast('Report saved!','success')}catch(e){toast('Save requires backend server','error')}
@@ -1051,9 +1159,9 @@ function App(){
       ),
       React.createElement('main',{className:'main'},
         tab==='dashboard'&&React.createElement(DashboardTab,{result:result,toast:toast,setTab:setTab,user:user}),
-        tab==='upload'&&React.createElement('div',{className:'content-area'},React.createElement(UploadTab,{onResult:function(d){sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(d);setTab('segmentation')},toast:toast})),
+        tab==='upload'&&React.createElement('div',{className:'content-area'},React.createElement(UploadTab,{onResult:function(d){sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(d);addToHistory(d);setTab('segmentation')},toast:toast})),
         tab==='segmentation'&&React.createElement(SegView,{result:result,toast:toast}),
-        tab==='reports'&&React.createElement('div',{className:'content-area'},React.createElement(ReportsTab,{result:result,toast:toast,user:user})),
+        tab==='reports'&&React.createElement('div',{className:'content-area'},React.createElement(ReportsTab,{result:result,toast:toast,user:user,reportHistory:reportHistory})),
         tab==='model-info'&&React.createElement('div',{className:'content-area'},React.createElement(ModelInfoTab,null))
       ),
       React.createElement('footer',{className:'footer'},
@@ -1062,9 +1170,7 @@ function App(){
           React.createElement('span',{className:'f-version'},'MPFNet v1.0 \u00B7 Wu et al. 2023 \u00B7 Dice \u2265 90%')
         ),
         React.createElement('div',{className:'footer-right'},
-          React.createElement('button',{className:'f-btn f-btn-orange',onClick:reanalyze,disabled:loading},'\uD83D\uDD04 Reanalyze'),
-          React.createElement('button',{className:'f-btn f-btn-green',onClick:saveReport},'\uD83D\uDCBE Save Report'),
-          React.createElement('button',{className:'f-btn f-btn-blue',onClick:exportJSON},'\u2B07 Export')
+          React.createElement('button',{className:'f-btn f-btn-orange',onClick:reanalyze,disabled:loading},'\uD83D\uDD04 Reanalyze')
         )
       ),
       React.createElement('div',{className:'toast-stack'},toasts.map(function(t){
