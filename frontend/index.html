@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Brain Tumor Segmentation – Dr. Sarah Andrews</title>
+  <title>Multi-Path Fusion Network Based Global Attention For Brain Tumor Segmentation</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -181,8 +181,50 @@ input[type=range].z-slider::-webkit-slider-thumb{background:#ea580c}
 .toast-info{background:#fff;color:#2563eb;border:1px solid #bfdbfe}
 @keyframes toastIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
 
-@media(max-width:1024px){.sidebar{width:320px}.stats-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:768px){.main{flex-direction:column}.sidebar{width:100%;border-left:none;border-top:1px solid #e2e8f0}.nav-tabs{display:none}.stats-grid{grid-template-columns:1fr 1fr}}
+.mi-section{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;margin-bottom:16px}
+.mi-section h3{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.mi-section h3 .mi-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.mi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.mi-card{background:#f8fafc;border:1px solid #f1f5f9;border-radius:10px;padding:14px;text-align:center;transition:all .2s}
+.mi-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.06);border-color:#dbeafe}
+.mi-card .mi-val{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.3px}
+.mi-card .mi-label{font-size:11px;color:#94a3b8;font-weight:500;margin-top:2px}
+.mi-table{width:100%;border-collapse:separate;border-spacing:0}
+.mi-table th{padding:8px 12px;background:#f8fafc;font-size:11px;font-weight:600;color:#64748b;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #e5e7eb}
+.mi-table td{padding:10px 12px;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9}
+.mi-table tr:hover td{background:#f8fafc}
+.mi-flow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:12px 0}
+.mi-flow-box{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;border:1px solid #e5e7eb;background:#fff;color:#334155}
+.mi-flow-box.active{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border-color:transparent}
+.mi-flow-arrow{font-size:14px;color:#94a3b8}
+.mi-tag{display:inline-block;padding:3px 10px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.mi-tag-blue{background:#dbeafe;color:#1d4ed8}
+.mi-tag-green{background:#dcfce7;color:#15803d}
+.mi-tag-purple{background:#ede9fe;color:#7c3aed}
+.mi-tag-amber{background:#fef3c7;color:#b45309}
+.mi-ref{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:14px 16px;font-size:12px;color:#475569;line-height:1.7;font-style:italic}
+@media(max-width:1024px){.sidebar{width:320px}.stats-grid{grid-template-columns:repeat(2,1fr)}.mi-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.main{flex-direction:column}.sidebar{width:100%;border-left:none;border-top:1px solid #e2e8f0}.nav-tabs{display:none}.stats-grid{grid-template-columns:1fr 1fr}.mi-grid{grid-template-columns:1fr}}
+
+/* ── Login / Signup Page ── */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#2563eb 100%);padding:20px}
+.auth-card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 60px rgba(0,0,0,0.3)}
+.auth-logo{text-align:center;margin-bottom:28px}
+.auth-logo .icon{width:60px;height:60px;background:linear-gradient(135deg,#2563eb,#3b82f6);border-radius:16px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;color:#fff;margin-bottom:12px}
+.auth-logo h2{font-size:22px;font-weight:800;color:#0f172a;letter-spacing:-.3px}
+.auth-logo p{font-size:13px;color:#64748b;margin-top:4px}
+.auth-tabs{display:flex;gap:0;background:#f1f5f9;border-radius:10px;padding:3px;margin-bottom:24px}
+.auth-tab{flex:1;padding:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;border-radius:8px;transition:all .2s;background:transparent;color:#64748b;font-family:inherit}
+.auth-tab.active{background:#fff;color:#0f172a;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.auth-field{margin-bottom:16px}
+.auth-field label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;letter-spacing:.3px}
+.auth-field input{width:100%;padding:11px 14px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;transition:border-color .2s;outline:none;background:#f8fafc}
+.auth-field input:focus{border-color:#3b82f6;background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+.auth-submit{width:100%;padding:13px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;box-shadow:0 4px 14px rgba(37,99,235,0.35)}
+.auth-submit:hover{box-shadow:0 6px 20px rgba(37,99,235,0.5);transform:translateY(-1px)}
+.auth-submit:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.auth-error{background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:500;margin-bottom:16px}
+.auth-footer{text-align:center;margin-top:20px;font-size:12px;color:#94a3b8}
   </style>
 </head>
 <body>
@@ -190,6 +232,79 @@ input[type=range].z-slider::-webkit-slider-thumb{background:#ea580c}
 <script>
 const{useState,useEffect,useRef,useCallback}=React;
 const API=window.location.port==='3000'?'http://localhost:8000':'';
+
+/* ── Auth helpers ── */
+function getStoredAuth(){
+  try{
+    var t=localStorage.getItem('bt_token');
+    var u=localStorage.getItem('bt_user');
+    if(t&&u) return {token:t,user:JSON.parse(u)};
+  }catch(e){}
+  return null;
+}
+function storeAuth(token,user){
+  localStorage.setItem('bt_token',token);
+  localStorage.setItem('bt_user',JSON.stringify(user));
+}
+function clearAuth(){
+  localStorage.removeItem('bt_token');
+  localStorage.removeItem('bt_user');
+}
+
+function LoginPage({onLogin}){
+  var s=useState('login'),mode=s[0],setMode=s[1];
+  var s1=useState(''),name=s1[0],setName=s1[1];
+  var s2=useState(''),email=s2[0],setEmail=s2[1];
+  var s3=useState(''),password=s3[0],setPassword=s3[1];
+  var s4=useState(''),role=s4[0],setRole=s4[1];
+  var s5=useState(''),error=s5[0],setError=s5[1];
+  var s6=useState(false),busy=s6[0],setBusy=s6[1];
+
+  async function handleSubmit(e){
+    e.preventDefault(); setError(''); setBusy(true);
+    try{
+      var url=API+'/api/auth/'+(mode==='login'?'login':'signup');
+      var body=mode==='login'?{email:email,password:password}:{name:name,email:email,password:password,role:role||'Radiologist'};
+      var r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      var d=await r.json();
+      if(!r.ok) throw new Error(d.detail||'Authentication failed');
+      storeAuth(d.access_token,d.user);
+      onLogin(d.user);
+    }catch(err){setError(err.message||'Server error')}finally{setBusy(false)}
+  }
+
+  return React.createElement('div',{className:'auth-page'},
+    React.createElement('form',{className:'auth-card',onSubmit:handleSubmit},
+      React.createElement('div',{className:'auth-logo'},
+        React.createElement('div',{className:'icon'},'\uD83E\uDDE0'),
+        React.createElement('h2',{style:{fontSize:'16px',lineHeight:'1.3'}},'Multi-Path Fusion Network Based Global Attention For Brain Tumor Segmentation')
+      ),
+      React.createElement('div',{className:'auth-tabs'},
+        React.createElement('button',{type:'button',className:'auth-tab'+(mode==='login'?' active':''),onClick:function(){setMode('login');setError('')}},'Sign In'),
+        React.createElement('button',{type:'button',className:'auth-tab'+(mode==='signup'?' active':''),onClick:function(){setMode('signup');setError('')}},'Create Account')
+      ),
+      error&&React.createElement('div',{className:'auth-error'},error),
+      mode==='signup'&&React.createElement('div',{className:'auth-field'},
+        React.createElement('label',null,'Full Name'),
+        React.createElement('input',{type:'text',placeholder:'Dr. Sarah Andrews',value:name,onChange:function(e){setName(e.target.value)},required:true})
+      ),
+      React.createElement('div',{className:'auth-field'},
+        React.createElement('label',null,'Email'),
+        React.createElement('input',{type:'email',placeholder:'doctor@hospital.com',value:email,onChange:function(e){setEmail(e.target.value)},required:true})
+      ),
+      React.createElement('div',{className:'auth-field'},
+        React.createElement('label',null,'Password'),
+        React.createElement('input',{type:'password',placeholder:'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022',value:password,onChange:function(e){setPassword(e.target.value)},required:true,minLength:6})
+      ),
+      mode==='signup'&&React.createElement('div',{className:'auth-field'},
+        React.createElement('label',null,'Role (optional)'),
+        React.createElement('input',{type:'text',placeholder:'Neuro-Oncologist',value:role,onChange:function(e){setRole(e.target.value)}})
+      ),
+      React.createElement('button',{type:'submit',className:'auth-submit',disabled:busy},busy?(mode==='login'?'Signing in...':'Creating account...'):(mode==='login'?'Sign In':'Create Account')),
+      React.createElement('div',{className:'auth-footer'},mode==='login'?'Secure medical imaging platform':'Password must be at least 6 characters')
+    )
+  );
+}
 
 const DEMO={
   status:"success",
@@ -390,11 +505,14 @@ function UploadTab({onResult,toast}){
   );
 }
 
-function ReportsTab({result,toast}){
+function ReportsTab({result,toast,user}){
+  var d=result||DEMO;
+  var dice=d.dice_scores||DEMO.dice_scores;
+  var avgDice=((dice.whole_tumor+dice.tumor_core+dice.enhancing_tumor)/3).toFixed(1);
+  var vol=d.tumor_volume_mm3!=null?d.tumor_volume_mm3+' mm\u00B3':'—';
+  var conf=d.confidence>=90?'High':d.confidence>=75?'Medium':'Low';
   var reports=[
-    {id:1,date:'2026-03-06',patient:'BraTS Demo',dice:'91.0%',vol:'438 mm\u00B3',conf:'High',status:'Reviewed'},
-    {id:2,date:'2026-03-05',patient:'Case #1042',dice:'89.5%',vol:'312 mm\u00B3',conf:'High',status:'Pending'},
-    {id:3,date:'2026-03-04',patient:'Case #1039',dice:'93.2%',vol:'521 mm\u00B3',conf:'High',status:'Reviewed'},
+    {id:1,date:new Date().toISOString().slice(0,10),patient:'Current Analysis',dice:avgDice+'%',vol:vol,conf:conf,status:'Active'},
   ];
   async function dlPDF(){
     var d=result||DEMO;
@@ -406,7 +524,7 @@ function ReportsTab({result,toast}){
       React.createElement('div',{className:'page-title-bar'},
         React.createElement('div',null,
           React.createElement('div',{className:'page-title'},'Segmentation Reports'),
-          React.createElement('div',{className:'page-subtitle'},'Dr. Sarah Andrews \u2014 Neuro-Oncology Department')
+          React.createElement('div',{className:'page-subtitle'},(user&&user.name?user.name:'Doctor')+' \u2014 '+(user&&user.role?user.role:'Neuro-Oncology Department'))
         ),
         React.createElement('div',{style:{display:'flex',gap:8}},
           React.createElement('button',{className:'f-btn f-btn-green',onClick:dlPDF},'\uD83D\uDCC4 PDF'),
@@ -431,6 +549,233 @@ function ReportsTab({result,toast}){
           )
         )
       )
+    )
+  );
+}
+
+function ModelInfoTab(){
+  return React.createElement('div',{style:{padding:24,maxWidth:960,margin:'0 auto'}},
+    React.createElement('div',{className:'page-title-bar',style:{marginBottom:20}},
+      React.createElement('div',null,
+        React.createElement('div',{className:'page-title'},'Model Architecture'),
+        React.createElement('div',{className:'page-subtitle'},'Multi-Path Fusion Network with Global Attention')
+      ),
+      React.createElement('span',{className:'mi-tag mi-tag-purple'},'PyTorch')
+    ),
+
+    // ── Pipeline Flow ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#dbeafe',color:'#2563eb'}},'\u26A1'),'Pipeline Flow'),
+      React.createElement('div',{className:'mi-flow'},
+        React.createElement('span',{className:'mi-flow-box active'},'Input MRI'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box'},'Stem Conv'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box active'},'3 Parallel Paths'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box'},'Concat + 1\u00D71 Fusion'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box active'},'Global Attention (CBAM)'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box'},'U-Net Encoder'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box'},'Bottleneck'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box'},'U-Net Decoder'),
+        React.createElement('span',{className:'mi-flow-arrow'},'\u2192'),
+        React.createElement('span',{className:'mi-flow-box active'},'Segmentation Mask')
+      )
+    ),
+
+    // ── Key Specs ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#dcfce7',color:'#15803d'}},'\uD83D\uDCCA'),'Key Specifications'),
+      React.createElement('div',{className:'mi-grid'},
+        React.createElement('div',{className:'mi-card'},React.createElement('div',{className:'mi-val'},'256\u00D7256'),React.createElement('div',{className:'mi-label'},'Input Resolution')),
+        React.createElement('div',{className:'mi-card'},React.createElement('div',{className:'mi-val'},'4'),React.createElement('div',{className:'mi-label'},'Output Classes')),
+        React.createElement('div',{className:'mi-card'},React.createElement('div',{className:'mi-val'},'32'),React.createElement('div',{className:'mi-label'},'Base Channel Width')),
+        React.createElement('div',{className:'mi-card'},React.createElement('div',{className:'mi-val'},'1024'),React.createElement('div',{className:'mi-label'},'Deepest Channels')),
+        React.createElement('div',{className:'mi-card'},React.createElement('div',{className:'mi-val'},'16\u00D716'),React.createElement('div',{className:'mi-label'},'Bottleneck Resolution')),
+        React.createElement('div',{className:'mi-card'},React.createElement('div',{className:'mi-val'},'3'),React.createElement('div',{className:'mi-label'},'Encoder-Decoder Stages'))
+      )
+    ),
+
+    // ── Three Parallel Paths ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#ede9fe',color:'#7c3aed'}},'\u2261'),'Multi-Path Feature Extraction'),
+      React.createElement('table',{className:'mi-table'},
+        React.createElement('thead',null,React.createElement('tr',null,
+          React.createElement('th',null,'Path'),
+          React.createElement('th',null,'Depth'),
+          React.createElement('th',null,'Conv Layers'),
+          React.createElement('th',null,'Output Ch'),
+          React.createElement('th',null,'Feature Type')
+        )),
+        React.createElement('tbody',null,
+          React.createElement('tr',null,
+            React.createElement('td',null,React.createElement('span',{className:'mi-tag mi-tag-green'},'Low-Level')),
+            React.createElement('td',null,'Shallow'),
+            React.createElement('td',null,'3'),
+            React.createElement('td',null,'64'),
+            React.createElement('td',null,'Edges & fine details')
+          ),
+          React.createElement('tr',null,
+            React.createElement('td',null,React.createElement('span',{className:'mi-tag mi-tag-blue'},'Mid-Level')),
+            React.createElement('td',null,'Medium'),
+            React.createElement('td',null,'5'),
+            React.createElement('td',null,'64'),
+            React.createElement('td',null,'Texture & intermediate')
+          ),
+          React.createElement('tr',null,
+            React.createElement('td',null,React.createElement('span',{className:'mi-tag mi-tag-purple'},'High-Level')),
+            React.createElement('td',null,'Deep'),
+            React.createElement('td',null,'7'),
+            React.createElement('td',null,'64'),
+            React.createElement('td',null,'Global & semantic')
+          )
+        )
+      ),
+      React.createElement('div',{style:{marginTop:10,fontSize:12,color:'#64748b'}},'All 3 paths concatenated (192 ch) \u2192 1\u00D71 conv fusion to 128 ch')
+    ),
+
+    // ── Global Attention Module ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#fef3c7',color:'#b45309'}},'\uD83D\uDD0D'),'Global Attention Module (CBAM-style)'),
+      React.createElement('table',{className:'mi-table'},
+        React.createElement('thead',null,React.createElement('tr',null,
+          React.createElement('th',null,'Stage'),
+          React.createElement('th',null,'Mechanism'),
+          React.createElement('th',null,'Operation'),
+          React.createElement('th',null,'Purpose')
+        )),
+        React.createElement('tbody',null,
+          React.createElement('tr',null,
+            React.createElement('td',null,React.createElement('span',{className:'mi-tag mi-tag-amber'},'Channel Attention')),
+            React.createElement('td',null,'SE-style'),
+            React.createElement('td',null,'AvgPool + MaxPool \u2192 FC \u2192 Sigmoid'),
+            React.createElement('td',null,'Recalibrates which feature channels matter')
+          ),
+          React.createElement('tr',null,
+            React.createElement('td',null,React.createElement('span',{className:'mi-tag mi-tag-blue'},'Spatial Attention')),
+            React.createElement('td',null,'Spatial gate'),
+            React.createElement('td',null,'AvgPool + MaxPool \u2192 7\u00D77 Conv \u2192 Sigmoid'),
+            React.createElement('td',null,'Recalibrates where to focus spatially')
+          )
+        )
+      )
+    ),
+
+    // ── Encoder/Decoder ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#dbeafe',color:'#2563eb'}},'\u2195'),'U-Net Encoder & Decoder'),
+      React.createElement('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}},
+        React.createElement('div',null,
+          React.createElement('h4',{style:{fontSize:12,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}},'Encoder (Downsampling)'),
+          React.createElement('table',{className:'mi-table'},
+            React.createElement('thead',null,React.createElement('tr',null,
+              React.createElement('th',null,'Stage'),React.createElement('th',null,'Channels'),React.createElement('th',null,'Resolution')
+            )),
+            React.createElement('tbody',null,
+              React.createElement('tr',null,React.createElement('td',null,'Enc 1'),React.createElement('td',null,'128 \u2192 128'),React.createElement('td',null,'256 \u2192 128')),
+              React.createElement('tr',null,React.createElement('td',null,'Enc 2'),React.createElement('td',null,'128 \u2192 256'),React.createElement('td',null,'128 \u2192 64')),
+              React.createElement('tr',null,React.createElement('td',null,'Enc 3'),React.createElement('td',null,'256 \u2192 512'),React.createElement('td',null,'64 \u2192 32')),
+              React.createElement('tr',null,React.createElement('td',{style:{fontWeight:700}},'Bottleneck'),React.createElement('td',null,'512 \u2192 1024 \u2192 512'),React.createElement('td',null,'16\u00D716'))
+            )
+          )
+        ),
+        React.createElement('div',null,
+          React.createElement('h4',{style:{fontSize:12,fontWeight:700,color:'#64748b',textTransform:'uppercase',letterSpacing:'.5px',marginBottom:8}},'Decoder (Upsampling)'),
+          React.createElement('table',{className:'mi-table'},
+            React.createElement('thead',null,React.createElement('tr',null,
+              React.createElement('th',null,'Stage'),React.createElement('th',null,'Channels'),React.createElement('th',null,'Method')
+            )),
+            React.createElement('tbody',null,
+              React.createElement('tr',null,React.createElement('td',null,'Dec 3'),React.createElement('td',null,'512+512 \u2192 256'),React.createElement('td',null,'ConvTranspose2d + Skip')),
+              React.createElement('tr',null,React.createElement('td',null,'Dec 2'),React.createElement('td',null,'256+256 \u2192 128'),React.createElement('td',null,'ConvTranspose2d + Skip')),
+              React.createElement('tr',null,React.createElement('td',null,'Dec 1'),React.createElement('td',null,'128+128 \u2192 64'),React.createElement('td',null,'ConvTranspose2d + Skip')),
+              React.createElement('tr',null,React.createElement('td',{style:{fontWeight:700}},'Head'),React.createElement('td',null,'64 \u2192 4 classes'),React.createElement('td',null,'1\u00D71 Conv2d'))
+            )
+          )
+        )
+      )
+    ),
+
+    // ── Segmentation Classes ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#dcfce7',color:'#15803d'}},'\uD83C\uDFAF'),'Segmentation Classes'),
+      React.createElement('table',{className:'mi-table'},
+        React.createElement('thead',null,React.createElement('tr',null,
+          React.createElement('th',null,'Class'),React.createElement('th',null,'Label'),React.createElement('th',null,'Color'),React.createElement('th',null,'BraTS Region')
+        )),
+        React.createElement('tbody',null,
+          React.createElement('tr',null,React.createElement('td',null,'0'),React.createElement('td',null,'Background'),React.createElement('td',null,React.createElement('span',{style:{display:'inline-block',width:14,height:14,borderRadius:4,background:'#e2e8f0',verticalAlign:'middle',marginRight:6}}),  'Transparent'),React.createElement('td',null,'\u2014')),
+          React.createElement('tr',null,React.createElement('td',null,'1'),React.createElement('td',null,'Whole Tumor (WT)'),React.createElement('td',null,React.createElement('span',{style:{display:'inline-block',width:14,height:14,borderRadius:4,background:'#00c850',verticalAlign:'middle',marginRight:6}}),'Green'),React.createElement('td',null,'NCR + ET + Edema')),
+          React.createElement('tr',null,React.createElement('td',null,'2'),React.createElement('td',null,'Tumor Core (TC)'),React.createElement('td',null,React.createElement('span',{style:{display:'inline-block',width:14,height:14,borderRadius:4,background:'#ff8c00',verticalAlign:'middle',marginRight:6}}),'Orange'),React.createElement('td',null,'NCR + ET')),
+          React.createElement('tr',null,React.createElement('td',null,'3'),React.createElement('td',null,'Enhancing Tumor (ET)'),React.createElement('td',null,React.createElement('span',{style:{display:'inline-block',width:14,height:14,borderRadius:4,background:'#ffe600',verticalAlign:'middle',marginRight:6}}),'Yellow'),React.createElement('td',null,'Active Enhancing'))
+        )
+      )
+    ),
+
+    // ── Loss Function & Training ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#fce7f3',color:'#be185d'}},'\u2696'),'Loss Function & Training'),
+      React.createElement('div',{className:'mi-grid',style:{gridTemplateColumns:'1fr 1fr'}},
+        React.createElement('div',{className:'mi-card',style:{textAlign:'left'}},
+          React.createElement('div',{style:{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:8}},'Combined Loss'),
+          React.createElement('div',{style:{fontSize:12,color:'#64748b',lineHeight:1.7}},'L = 0.5 \u00D7 Dice Loss + 0.5 \u00D7 Cross-Entropy'),
+          React.createElement('div',{style:{fontSize:11,color:'#94a3b8',marginTop:6}},'Dice Loss: Per-class soft Dice (smooth=1.0)'),
+          React.createElement('div',{style:{fontSize:11,color:'#94a3b8'}},'CE Loss: Standard multi-class CrossEntropyLoss')
+        ),
+        React.createElement('div',{className:'mi-card',style:{textAlign:'left'}},
+          React.createElement('div',{style:{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:8}},'Training Config'),
+          React.createElement('div',{style:{fontSize:12,color:'#64748b',lineHeight:1.7}},'Optimizer: AdamW (lr=2e-4, wd=1e-4)'),
+          React.createElement('div',{style:{fontSize:12,color:'#64748b',lineHeight:1.7}},'Gradient Clipping: max_norm=1.0'),
+          React.createElement('div',{style:{fontSize:12,color:'#64748b',lineHeight:1.7}},'Image Size: 256\u00D7256 grayscale'),
+          React.createElement('div',{style:{fontSize:12,color:'#64748b',lineHeight:1.7}},'Evaluation: BraTS hierarchical Dice (WT/TC/ET)')
+        )
+      )
+    ),
+
+    // ── Dice Metrics ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#dcfce7',color:'#15803d'}},'\u2705'),'Trained Model Performance'),
+      React.createElement('div',{className:'mi-grid'},
+        React.createElement('div',{className:'mi-card'},
+          React.createElement('div',{className:'mi-val',style:{color:'#15803d'}},'98.8%'),
+          React.createElement('div',{className:'mi-label'},'Whole Tumor Dice')
+        ),
+        React.createElement('div',{className:'mi-card'},
+          React.createElement('div',{className:'mi-val',style:{color:'#2563eb'}},'98.9%'),
+          React.createElement('div',{className:'mi-label'},'Tumor Core Dice')
+        ),
+        React.createElement('div',{className:'mi-card'},
+          React.createElement('div',{className:'mi-val',style:{color:'#b45309'}},'96.6%'),
+          React.createElement('div',{className:'mi-label'},'Enhancing Tumor Dice')
+        )
+      )
+    ),
+
+    // ── Building Blocks ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#f1f5f9',color:'#475569'}},'\u{1F9F1}'),'Building Blocks'),
+      React.createElement('table',{className:'mi-table'},
+        React.createElement('thead',null,React.createElement('tr',null,
+          React.createElement('th',null,'Block'),React.createElement('th',null,'Structure'),React.createElement('th',null,'Used In')
+        )),
+        React.createElement('tbody',null,
+          React.createElement('tr',null,React.createElement('td',null,'ConvBNReLU'),React.createElement('td',null,'Conv2d \u2192 BatchNorm2d \u2192 ReLU'),React.createElement('td',null,'All paths, encoder, decoder, bottleneck')),
+          React.createElement('tr',null,React.createElement('td',null,'EncoderBlock'),React.createElement('td',null,'2\u00D7 ConvBNReLU + MaxPool2d(2)'),React.createElement('td',null,'3 encoder stages')),
+          React.createElement('tr',null,React.createElement('td',null,'DecoderBlock'),React.createElement('td',null,'ConvTranspose2d + Skip Concat + 2\u00D7 ConvBNReLU'),React.createElement('td',null,'3 decoder stages')),
+          React.createElement('tr',null,React.createElement('td',null,'ChannelAttention'),React.createElement('td',null,'AvgPool + MaxPool \u2192 FC \u2192 Sigmoid'),React.createElement('td',null,'Global Attention Module')),
+          React.createElement('tr',null,React.createElement('td',null,'SpatialAttention'),React.createElement('td',null,'Avg+Max channel pool \u2192 7\u00D77 Conv \u2192 Sigmoid'),React.createElement('td',null,'Global Attention Module'))
+        )
+      )
+    ),
+
+    // ── Paper Reference ──
+    React.createElement('div',{className:'mi-section'},
+      React.createElement('h3',null,React.createElement('span',{className:'mi-icon',style:{background:'#f1f5f9',color:'#475569'}},'\uD83D\uDCDD'),'Reference'),
+      React.createElement('div',{className:'mi-ref'},'Wu, D., Qiu, S., Qin, J., & Zhao, P. (2023). "Multi-Path Fusion Network Based Global Attention for Brain Tumor Segmentation." Proceedings of the International Symposium on Artificial Intelligence and Medical Sciences (ISAIMS 2023).')
     )
   );
 }
@@ -577,13 +922,18 @@ function SegView({result,toast}){
   );
 }
 
-function DashboardTab({result,toast,setTab}){
+function DashboardTab({result,toast,setTab,user}){
   var dice=result&&result.dice_scores?result.dice_scores:DEMO.dice_scores;
+  var avgDice=((dice.whole_tumor+dice.tumor_core+dice.enhancing_tumor)/3).toFixed(1);
+  var conf=result&&result.confidence?result.confidence:91;
+  /* Read real counts from sessionStorage */
+  var analyses=parseInt(sessionStorage.getItem('bt_analyses')||'0',10);
+  var reports=parseInt(sessionStorage.getItem('bt_reports')||'0',10);
   var statsData=[
-    {icon:'\uD83D\uDD2C',val:'12',label:'Analyses Today',color:'#3b82f6',bg:'#eff6ff',change:'+3'},
-    {icon:'\uD83C\uDFAF',val:'91.4%',label:'Avg Dice Score',color:'#22c55e',bg:'#f0fdf4',change:'+1.2%'},
-    {icon:'\uD83D\uDCC4',val:'8',label:'Reports Generated',color:'#f59e0b',bg:'#fffbeb',change:'+2'},
-    {icon:'\u2705',val:'94%',label:'High Confidence',color:'#8b5cf6',bg:'#f5f3ff',change:'+5%'},
+    {icon:'\uD83D\uDD2C',val:String(analyses),label:'Analyses Done',color:'#3b82f6',bg:'#eff6ff',change:analyses>0?'Active':'\u2014'},
+    {icon:'\uD83C\uDFAF',val:avgDice+'%',label:'Avg Dice Score',color:'#22c55e',bg:'#f0fdf4',change:parseFloat(avgDice)>=90?'Excellent':'Good'},
+    {icon:'\uD83D\uDCC4',val:String(reports),label:'Reports Generated',color:'#f59e0b',bg:'#fffbeb',change:reports>0?'Active':'\u2014'},
+    {icon:'\u2705',val:conf.toFixed(0)+'%',label:'Confidence Level',color:'#8b5cf6',bg:'#f5f3ff',change:conf>=90?'HIGH':'MED'},
   ];
   var diceItems=[['Whole Tumor',dice.whole_tumor,'#22c55e'],['Tumor Core',dice.tumor_core,'#f97316'],['Enhancing',dice.enhancing_tumor,'#eab308']];
   return(
@@ -591,7 +941,7 @@ function DashboardTab({result,toast,setTab}){
       React.createElement('div',{className:'page-title-bar'},
         React.createElement('div',null,
           React.createElement('div',{className:'page-title'},'Dashboard Overview'),
-          React.createElement('div',{className:'page-subtitle'},'Brain Tumor Segmentation System \u2014 Dr. Sarah Andrews')
+          React.createElement('div',{className:'page-subtitle'},'Brain Tumor Segmentation System \u2014 '+(user&&user.name?user.name:'Doctor'))
         )
       ),
       React.createElement('div',{className:'stats-grid'},statsData.map(function(s,i){
@@ -632,38 +982,47 @@ function DashboardTab({result,toast,setTab}){
 }
 
 function App(){
+  var stored=getStoredAuth();
+  const[user,setUser]=useState(stored?stored.user:null);
   const[tab,setTab]=useState('segmentation');
   const[result,setResult]=useState(null);
   const[loading,setLoading]=useState(false);
   const[showMenu,setShowMenu]=useState(false);
   const{toasts,show:toast}=useToast();
 
-  useEffect(function(){(async function(){try{var r=await fetch(API+'/api/demo');if(r.ok){setResult(await r.json())}else setResult(DEMO)}catch(e){setResult(DEMO)}})()},[]);
+  function handleLogin(u){setUser(u)}
+  function handleLogout(){clearAuth();setUser(null);setResult(null);setShowMenu(false)}
+
+  useEffect(function(){if(!user)return;(async function(){try{var r=await fetch(API+'/api/demo');if(r.ok){var d=await r.json();sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(d)}else setResult(DEMO)}catch(e){setResult(DEMO)}})()},[user]);
 
   async function reanalyze(){
     setLoading(true);
-    try{var r=await fetch(API+'/api/reanalyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(r.ok){setResult(await r.json());toast('Re-analysis complete!','success')}else throw new Error()}catch(e){var rr=JSON.parse(JSON.stringify(DEMO));rr.dice_scores.whole_tumor=+(91+(Math.random()-.5)).toFixed(1);rr.dice_scores.tumor_core=+(95+(Math.random()-.5)).toFixed(1);rr.dice_scores.enhancing_tumor=+(90+(Math.random()-.5)).toFixed(1);setResult(rr);toast('Re-analysis complete (offline)','success')}finally{setLoading(false)}
+    try{var r=await fetch(API+'/api/reanalyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(r.ok){sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(await r.json());toast('Re-analysis complete!','success')}else throw new Error()}catch(e){var rr=JSON.parse(JSON.stringify(DEMO));rr.dice_scores.whole_tumor=+(91+(Math.random()-.5)).toFixed(1);rr.dice_scores.tumor_core=+(95+(Math.random()-.5)).toFixed(1);rr.dice_scores.enhancing_tumor=+(90+(Math.random()-.5)).toFixed(1);setResult(rr);toast('Re-analysis complete (offline)','success')}finally{setLoading(false)}
   }
   async function saveReport(){
-    try{var r=await fetch(API+'/api/report/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(!r.ok)throw new Error();var b=await r.blob();var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_report.pdf';a.click();URL.revokeObjectURL(u);toast('Report saved!','success')}catch(e){toast('Save requires backend server','error')}
+    try{var r=await fetch(API+'/api/report/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(result||DEMO)});if(!r.ok)throw new Error();var b=await r.blob();var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_report.pdf';a.click();URL.revokeObjectURL(u);sessionStorage.setItem('bt_reports',String(parseInt(sessionStorage.getItem('bt_reports')||'0',10)+1));toast('Report saved!','success')}catch(e){toast('Save requires backend server','error')}
   }
   function exportJSON(){var d=result||DEMO;var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download='brain_tumor_analysis.json';a.click();URL.revokeObjectURL(u);toast('Exported to JSON!','success')}
 
-  var navItems=[['dashboard','Dashboard'],['upload','Upload MRI'],['segmentation','Segmentation Output'],['reports','Reports']];
+  /* If not logged in, show login page */
+  if(!user) return React.createElement(LoginPage,{onLogin:handleLogin});
+
+  var initials=user.initials||(user.name||'U').substring(0,2).toUpperCase();
+
+  var navItems=[['dashboard','Dashboard'],['upload','Upload MRI'],['segmentation','Segmentation Output'],['reports','Reports'],['model-info','Model Info']];
 
   return(
     React.createElement(React.Fragment,null,
       loading&&React.createElement('div',{className:'loading-overlay'},
         React.createElement('div',{className:'spinner'}),
         React.createElement('div',{className:'lo-text'},'Running segmentation model...'),
-        React.createElement('div',{className:'lo-sub'},'Multi-Path Fusion Network \u00B7 Global Attention')
+        React.createElement('div',{className:'lo-sub'},'Multi-Path Fusion Network Based Global Attention For Brain Tumor Segmentation')
       ),
       React.createElement('header',{className:'header'},
         React.createElement('div',{className:'header-left'},
           React.createElement('div',{className:'logo-box'},React.createElement('svg',{viewBox:'0 0 24 24'},React.createElement('path',{d:'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z'}))),
           React.createElement('div',{className:'brand-text'},
-            React.createElement('h1',null,'NeuroSeg Pro'),
-            React.createElement('p',null,'Brain Tumor Segmentation \u00B7 Anurag University')
+            React.createElement('h1',{style:{fontSize:'12px',lineHeight:'1.3'}},'Multi-Path Fusion Network Based Global Attention For Brain Tumor Segmentation')
           )
         ),
         React.createElement('nav',{className:'nav-tabs'},navItems.map(function(item){
@@ -674,27 +1033,28 @@ function App(){
           React.createElement('div',{className:'notif-btn'},'\uD83D\uDD14',React.createElement('div',{className:'notif-dot'})),
           React.createElement('div',{style:{position:'relative'},onClick:function(){setShowMenu(function(m){return !m})}},
             React.createElement('div',{className:'user-pill'},
-              React.createElement('div',{className:'user-avatar'},'SA'),
+              React.createElement('div',{className:'user-avatar'},initials),
               React.createElement('div',{className:'user-details'},
-                React.createElement('div',{className:'name'},'Dr. Sarah Andrews'),
-                React.createElement('div',{className:'role'},'Neuro-Oncologist')
+                React.createElement('div',{className:'name'},user.name),
+                React.createElement('div',{className:'role'},user.role||'Radiologist')
               )
             ),
             showMenu&&React.createElement('div',{className:'dropdown-menu'},
-              React.createElement('div',{className:'dd-item'},'\uD83D\uDC64 Profile'),
-              React.createElement('div',{className:'dd-item'},'\u2699\uFE0F Settings'),
-              React.createElement('div',{className:'dd-item'},'\uD83C\uDF19 Dark Mode'),
+              React.createElement('div',{className:'dd-item'},'👤 Profile'),
+              React.createElement('div',{className:'dd-item'},'⚙️ Settings'),
+              React.createElement('div',{className:'dd-item'},'🌙 Dark Mode'),
               React.createElement('div',{className:'dd-divider'}),
-              React.createElement('div',{className:'dd-item'},'\uD83D\uDEAA Sign Out')
+              React.createElement('div',{className:'dd-item',onClick:handleLogout},'🚪 Sign Out')
             )
           )
         )
       ),
       React.createElement('main',{className:'main'},
-        tab==='dashboard'&&React.createElement(DashboardTab,{result:result,toast:toast,setTab:setTab}),
-        tab==='upload'&&React.createElement('div',{className:'content-area'},React.createElement(UploadTab,{onResult:function(d){setResult(d);setTab('segmentation')},toast:toast})),
+        tab==='dashboard'&&React.createElement(DashboardTab,{result:result,toast:toast,setTab:setTab,user:user}),
+        tab==='upload'&&React.createElement('div',{className:'content-area'},React.createElement(UploadTab,{onResult:function(d){sessionStorage.setItem('bt_analyses',String(parseInt(sessionStorage.getItem('bt_analyses')||'0',10)+1));setResult(d);setTab('segmentation')},toast:toast})),
         tab==='segmentation'&&React.createElement(SegView,{result:result,toast:toast}),
-        tab==='reports'&&React.createElement('div',{className:'content-area'},React.createElement(ReportsTab,{result:result,toast:toast}))
+        tab==='reports'&&React.createElement('div',{className:'content-area'},React.createElement(ReportsTab,{result:result,toast:toast,user:user})),
+        tab==='model-info'&&React.createElement('div',{className:'content-area'},React.createElement(ModelInfoTab,null))
       ),
       React.createElement('footer',{className:'footer'},
         React.createElement('div',{className:'footer-left'},

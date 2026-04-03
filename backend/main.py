@@ -6,7 +6,7 @@ Endpoints: upload MRI, get demo data, generate report, export JSON.
 import io
 import json
 import base64
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response, FileResponse, JSONResponse
@@ -16,9 +16,11 @@ from pathlib import Path
 try:
     from inference import run_inference, generate_demo_mri
     from report_generator import generate_pdf_report
+    from auth import SignupRequest, LoginRequest, signup_user, login_user, get_current_user, require_auth
 except ImportError:
     from backend.inference import run_inference, generate_demo_mri
     from backend.report_generator import generate_pdf_report
+    from backend.auth import SignupRequest, LoginRequest, signup_user, login_user, get_current_user, require_auth
 
 # ─────────────────────────────────────────────────────────────
 # App setup
@@ -51,13 +53,32 @@ async def root():
     """Serve the dashboard."""
     index = FRONTEND_DIR / "index.html"
     if index.exists():
-        return FileResponse(str(index))
+        return FileResponse(str(index), headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     return JSONResponse({"message": "Brain Tumor Segmentation API running. Visit /docs for API docs."})
 
 
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "model": "MultiPathFusionNet", "version": "1.0.0"}
+
+
+# ─────────────────────────────────────────────────────────────
+# Auth Endpoints
+# ─────────────────────────────────────────────────────────────
+
+@app.post("/api/auth/signup")
+async def signup(req: SignupRequest):
+    return signup_user(req)
+
+
+@app.post("/api/auth/login")
+async def login(req: LoginRequest):
+    return login_user(req)
+
+
+@app.get("/api/auth/me")
+async def me(user: dict = Depends(require_auth)):
+    return user
 
 
 @app.post("/api/upload")
@@ -129,21 +150,14 @@ async def get_demo_mri_png():
 async def reanalyze(result: dict):
     """
     Re-run analysis on a previously uploaded image (pass back the mri_image field).
-    Applies slight parameter perturbation to simulate re-analysis.
+    Returns fresh, unmodified model predictions.
     """
     mri_b64 = result.get("mri_image")
     if not mri_b64:
-        # Run on fresh demo image
         demo_bytes = generate_demo_mri()
         new_result = run_inference(demo_bytes)
     else:
         mri_bytes = base64.b64decode(mri_b64)
         new_result = run_inference(mri_bytes)
 
-    # Slightly perturb scores for reanalysis effect
-    import random
-    for k in new_result.get("dice_scores", {}):
-        new_result["dice_scores"][k] = round(
-            new_result["dice_scores"][k] + random.uniform(-0.5, 0.5), 1
-        )
     return JSONResponse(new_result)

@@ -70,18 +70,18 @@ class SyntheticBraTSDataset(Dataset):
         s = random.uniform(0.6, 1.4)
 
         # Whole Tumor
-        wt = ((X - tx) **2 / (45*s)**2 + (Y - ty)**2 / (50*s)**2) <= 1.0 & brain
+        wt = (((X - tx) **2 / (45*s)**2 + (Y - ty)**2 / (50*s)**2) <= 1.0) & brain
         img[wt] = np.random.uniform(0.65, 0.8, int(wt.sum()))
         mask[wt] = 1
 
         # Tumor Core
-        tc = ((X - tx)**2 / (25*s)**2 + (Y - ty)**2 / (28*s)**2) <= 1.0 & wt
+        tc = (((X - tx)**2 / (25*s)**2 + (Y - ty)**2 / (28*s)**2) <= 1.0) & wt
         img[tc] = np.random.uniform(0.78, 0.9, int(tc.sum()))
         mask[tc] = 2
 
         # Enhancing Tumor
         etx, ety = tx + random.randint(-5, 5), ty + random.randint(-5, 5)
-        et = ((X - etx)**2 / (12*s)**2 + (Y - ety)**2 / (13*s)**2) <= 1.0 & tc
+        et = (((X - etx)**2 / (12*s)**2 + (Y - ety)**2 / (13*s)**2) <= 1.0) & tc
         img[et] = np.random.uniform(0.88, 1.0, int(et.sum()))
         mask[et] = 3
 
@@ -91,6 +91,142 @@ class SyntheticBraTSDataset(Dataset):
 
         img_t  = torch.from_numpy(img).unsqueeze(0)   # (1, H, W)
         mask_t = torch.from_numpy(mask)                # (H, W)
+        return img_t, mask_t
+
+
+# ─────────────────────────────────────────────────────────────
+# Real BraTS NIfTI Dataset Loader
+# ─────────────────────────────────────────────────────────────
+
+class BraTSDataset(Dataset):
+    """
+    Real BraTS dataset loader for NIfTI (.nii.gz) files.
+    Supports BraTS 2019/2020/2021 folder structures.
+
+    Expected structure:
+      data_dir/
+        HGG/ (or Training/)
+          BraTS19_001/
+            *_t1.nii.gz
+            *_t1ce.nii.gz
+            *_t2.nii.gz
+            *_flair.nii.gz
+            *_seg.nii.gz
+        LGG/ (optional)
+          ...
+
+    For single-channel mode (in_channels=1), uses FLAIR modality.
+    For 4-channel mode, stacks T1, T1ce, T2, FLAIR.
+    """
+
+    def __init__(self, data_dir: str, img_size: int = 256, in_channels: int = 1,
+                 split: str = "train", val_ratio: float = 0.2, seed: int = 42):
+        import nibabel as nib
+        self.nib = nib
+        self.img_size = img_size
+        self.in_channels = in_channels
+        self.data_dir = Path(data_dir)
+
+        # Find all patient directories
+        patient_dirs = []
+        for subdir in ["HGG", "LGG", "Training", "."]:
+            search_dir = self.data_dir / subdir
+            if search_dir.exists():
+                for d in sorted(search_dir.iterdir()):
+                    if d.is_dir() and list(d.glob("*seg*")):
+                        patient_dirs.append(d)
+
+        if not patient_dirs:
+            raise FileNotFoundError(
+                f"No BraTS patient directories found in {data_dir}. "
+                f"Expected folders with *_seg.nii.gz files."
+            )
+
+        # Train/val split
+        rng = np.random.RandomState(seed)
+        indices = rng.permutation(len(patient_dirs))
+        n_val = max(1, int(len(patient_dirs) * val_ratio))
+        if split == "val":
+            indices = indices[:n_val]
+        else:
+            indices = indices[n_val:]
+
+        self.patients = [patient_dirs[i] for i in indices]
+
+        # Pre-compute slice indices: (patient_idx, slice_idx)
+        self.slices = []
+        for pidx, pdir in enumerate(self.patients):
+            seg_file = list(pdir.glob("*seg*"))[0]
+            seg = nib.load(str(seg_file)).get_fdata()
+            n_slices = seg.shape[2]
+            for s in range(n_slices):
+                # Only include slices that contain tumor
+                seg_slice = seg[:, :, s]
+                if seg_slice.max() > 0:
+                    self.slices.append((pidx, s))
+
+        print(f"BraTS {split}: {len(self.patients)} patients, {len(self.slices)} tumor slices")
+
+    def __len__(self):
+        return len(self.slices)
+
+    def _load_modality(self, patient_dir: Path, pattern: str) -> np.ndarray:
+        files = list(patient_dir.glob(f"*{pattern}*"))
+        if not files:
+            return None
+        return self.nib.load(str(files[0])).get_fdata()
+
+    def __getitem__(self, idx):
+        pidx, sidx = self.slices[idx]
+        pdir = self.patients[pidx]
+
+        # Load segmentation
+        seg_vol = self._load_modality(pdir, "seg")
+        seg_slice = seg_vol[:, :, sidx].astype(np.int64)
+
+        # BraTS label mapping: 0=BG, 1=NCR/NET, 2=ED, 4=ET
+        # Remap to: 0=BG, 1=WT, 2=TC, 3=ET
+        mask = np.zeros_like(seg_slice, dtype=np.int64)
+        mask[seg_slice > 0] = 1   # Whole tumor (any label)
+        mask[(seg_slice == 1) | (seg_slice == 4)] = 2  # Tumor core
+        mask[seg_slice == 4] = 3   # Enhancing tumor
+
+        if self.in_channels == 1:
+            # Use FLAIR (best for whole tumor visibility)
+            vol = self._load_modality(pdir, "flair")
+            if vol is None:
+                vol = self._load_modality(pdir, "t2")
+            img_slice = vol[:, :, sidx].astype(np.float32)
+            # Normalize to [0, 1]
+            img_slice = (img_slice - img_slice.min()) / (img_slice.max() - img_slice.min() + 1e-8)
+            # Resize
+            from PIL import Image as PILImage
+            img_pil = PILImage.fromarray((img_slice * 255).astype(np.uint8)).resize(
+                (self.img_size, self.img_size), PILImage.LANCZOS
+            )
+            img_arr = np.array(img_pil, dtype=np.float32) / 255.0
+            img_t = torch.from_numpy(img_arr).unsqueeze(0)  # (1, H, W)
+        else:
+            # 4-channel: T1, T1ce, T2, FLAIR
+            channels = []
+            for mod in ["t1.", "t1ce", "t2.", "flair"]:
+                vol = self._load_modality(pdir, mod)
+                s = vol[:, :, sidx].astype(np.float32) if vol is not None else np.zeros_like(seg_slice, dtype=np.float32)
+                s = (s - s.min()) / (s.max() - s.min() + 1e-8)
+                from PIL import Image as PILImage
+                pil = PILImage.fromarray((s * 255).astype(np.uint8)).resize(
+                    (self.img_size, self.img_size), PILImage.LANCZOS
+                )
+                channels.append(np.array(pil, dtype=np.float32) / 255.0)
+            img_t = torch.from_numpy(np.stack(channels, axis=0))  # (4, H, W)
+
+        # Resize mask
+        from PIL import Image as PILImage
+        mask_pil = PILImage.fromarray(mask.astype(np.uint8)).resize(
+            (self.img_size, self.img_size), PILImage.NEAREST
+        )
+        mask_t = torch.from_numpy(np.array(mask_pil, dtype=np.int64))  # (H, W)
+
         return img_t, mask_t
 
 
@@ -107,8 +243,12 @@ def train(args):
         train_ds = SyntheticBraTSDataset(n_samples=400, img_size=256)
         val_ds   = SyntheticBraTSDataset(n_samples=80,  img_size=256)
         print(f"Using synthetic BraTS-like dataset: {len(train_ds)} train / {len(val_ds)} val")
+    elif args.data_dir:
+        train_ds = BraTSDataset(args.data_dir, img_size=256, in_channels=1, split="train")
+        val_ds   = BraTSDataset(args.data_dir, img_size=256, in_channels=1, split="val")
+        print(f"Using real BraTS dataset: {len(train_ds)} train / {len(val_ds)} val slices")
     else:
-        raise NotImplementedError("Real BraTS loader not included. Use --synthetic for demo.")
+        raise ValueError("Specify --data_dir for real BraTS data or --synthetic for demo.")
 
     train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True,  num_workers=0)
     val_loader   = DataLoader(val_ds,   batch_size=args.batch_size, shuffle=False, num_workers=0)

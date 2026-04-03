@@ -7,6 +7,7 @@ import io
 import base64
 import math
 import numpy as np
+from pathlib import Path
 from PIL import Image, ImageFilter, ImageDraw
 import torch
 import torch.nn.functional as F
@@ -35,11 +36,34 @@ CLASS_COLORS = {
 # ─────────────────────────────────────────────────────────────
 _model: MultiPathFusionNet | None = None
 
+CHECKPOINT_DIR = Path(__file__).parent / "checkpoints"
+
 
 def get_model() -> MultiPathFusionNet:
+    """Load the trained MultiPathFusionNet with checkpoint weights."""
     global _model
     if _model is None:
-        _model = MultiPathFusionNet(in_channels=1, num_classes=4).to(DEVICE)
+        # Try 4-class checkpoint first, then fall back to 2-class
+        ckpt_path = CHECKPOINT_DIR / "best_model.pth"
+        ckpt_2class = CHECKPOINT_DIR / "best_model_2class.pth"
+
+        if ckpt_path.exists():
+            _model = MultiPathFusionNet(in_channels=1, num_classes=4).to(DEVICE)
+            ckpt = torch.load(str(ckpt_path), map_location=DEVICE, weights_only=False)
+            _model.load_state_dict(ckpt["model_state"])
+            print(f"[INFO] Loaded 4-class checkpoint from {ckpt_path}")
+        elif ckpt_2class.exists():
+            _model = MultiPathFusionNet(in_channels=1, num_classes=2).to(DEVICE)
+            ckpt = torch.load(str(ckpt_2class), map_location=DEVICE, weights_only=False)
+            _model.load_state_dict(ckpt["model_state"])
+            print(f"[INFO] Loaded 2-class checkpoint from {ckpt_2class}")
+        else:
+            raise RuntimeError(
+                "No trained checkpoint found in checkpoints/. "
+                "Run 'python train.py --synthetic --epochs 30' or "
+                "'python adapt_model.py' to train the model first."
+            )
+
         _model.eval()
     return _model
 
@@ -64,111 +88,6 @@ def preprocess_image(image_bytes: bytes) -> tuple[torch.Tensor, np.ndarray]:
 
 
 # ─────────────────────────────────────────────────────────────
-# Demo segmentation (used when no trained weights available)
-# ─────────────────────────────────────────────────────────────
-
-def _make_demo_mask(arr_uint8: np.ndarray) -> np.ndarray:
-    """
-    Generate a tumor mask by detecting bright anomalous regions
-    in the brain MRI image using adaptive intensity thresholding.
-    Returns mask (256, 256) with values 0-3.
-    """
-    from scipy import ndimage
-
-    h, w = arr_uint8.shape
-    mask = np.zeros((h, w), dtype=np.uint8)
-    arr_f = arr_uint8.astype(np.float32)
-
-    # ── Step 1: Identify the brain region (non-background) ──
-    # Background is typically the darkest area surrounding the brain
-    brain_thresh = max(arr_f.mean() * 0.25, 10)
-    brain_mask = arr_f > brain_thresh
-    # Clean up with morphological operations
-    brain_mask = ndimage.binary_fill_holes(brain_mask)
-    brain_mask = ndimage.binary_erosion(brain_mask, iterations=2)
-    brain_mask = ndimage.binary_dilation(brain_mask, iterations=2)
-
-    if brain_mask.sum() < 100:
-        return mask  # No brain detected
-
-    # ── Step 2: Compute statistics within the brain region ──
-    brain_vals = arr_f[brain_mask]
-    brain_mean = brain_vals.mean()
-    brain_std = brain_vals.std()
-    # Also compute the 85th and 95th percentile for robust thresholding
-    p75 = np.percentile(brain_vals, 75)
-    p90 = np.percentile(brain_vals, 90)
-    p95 = np.percentile(brain_vals, 95)
-
-    # ── Step 3: Whole Tumor – truly hyperintense regions only ──
-    # Use the higher of: (mean + 1.5*std) or 90th percentile
-    # This ensures only the brightest ~10% of brain voxels are candidates
-    wt_threshold = max(brain_mean + brain_std * 1.5, p90)
-    wt_region = (arr_f > wt_threshold) & brain_mask
-
-    # Remove very small noise regions – keep only significant components
-    wt_labeled, wt_num = ndimage.label(wt_region)
-    if wt_num == 0:
-        return mask
-
-    # Keep only the largest connected component (the main tumor mass)
-    comp_sizes = ndimage.sum(wt_region, wt_labeled, range(1, wt_num + 1))
-    largest_label = np.argmax(comp_sizes) + 1
-    # Also keep any component that's at least 30% the size of the largest
-    largest_size = comp_sizes[largest_label - 1]
-    min_component_size = max(80, largest_size * 0.3)
-    wt_cleaned = np.zeros_like(wt_region)
-    for i in range(1, wt_num + 1):
-        if comp_sizes[i - 1] >= min_component_size:
-            wt_cleaned[wt_labeled == i] = True
-    wt_region = wt_cleaned
-
-    # Mild smoothing – don't over-dilate
-    wt_region = ndimage.binary_dilation(wt_region, iterations=1)
-    wt_region = ndimage.binary_fill_holes(wt_region)
-    wt_region = ndimage.binary_erosion(wt_region, iterations=1)
-    wt_region = wt_region & brain_mask
-
-    # Sanity check: tumor shouldn't exceed 15% of brain area
-    max_tumor_pixels = brain_mask.sum() * 0.15
-    if wt_region.sum() > max_tumor_pixels:
-        # Re-threshold more aggressively
-        wt_threshold = max(brain_mean + brain_std * 2.0, p95)
-        wt_region = (arr_f > wt_threshold) & brain_mask
-        wt_region = ndimage.binary_dilation(wt_region, iterations=1)
-        wt_region = ndimage.binary_fill_holes(wt_region)
-        wt_region = wt_region & brain_mask
-
-    if wt_region.sum() < 30:
-        return mask
-
-    mask[wt_region] = 1
-
-    # ── Step 4: Tumor Core – brighter sub-region within whole tumor ──
-    tc_threshold = max(brain_mean + brain_std * 2.0, p95)
-    tc_region = (arr_f > tc_threshold) & wt_region
-
-    tc_region = ndimage.binary_dilation(tc_region, iterations=1)
-    tc_region = ndimage.binary_fill_holes(tc_region)
-    tc_region = tc_region & wt_region
-
-    if tc_region.sum() > 20:
-        mask[tc_region] = 2
-
-    # ── Step 5: Enhancing Tumor – brightest hot-spots within core ──
-    et_threshold = max(brain_mean + brain_std * 2.5, np.percentile(brain_vals, 97))
-    et_region = (arr_f > et_threshold) & (mask >= 1)  # within any tumor region
-
-    et_region = ndimage.binary_fill_holes(et_region)
-    et_region = et_region & (mask >= 1)
-
-    if et_region.sum() > 10:
-        mask[et_region] = 3
-
-    return mask
-
-
-# ─────────────────────────────────────────────────────────────
 # Main inference function
 # ─────────────────────────────────────────────────────────────
 
@@ -180,21 +99,26 @@ def run_inference(image_bytes: bytes) -> dict:
     tensor, arr_uint8 = preprocess_image(image_bytes)
 
     model = get_model()
+    num_classes = model.num_classes
 
     with torch.no_grad():
-        logits = model(tensor)              # (1, 4, 256, 256)
+        logits = model(tensor)              # (1, C, 256, 256)
         probs  = F.softmax(logits, dim=1)
         pred   = logits.argmax(dim=1).squeeze(0).cpu().numpy().astype(np.uint8)  # (256, 256)
 
-    # If model hasn't been trained (uniform background), fallback to demo mask
-    unique_classes = np.unique(pred)
-    if len(unique_classes) <= 1:
-        pred = _make_demo_mask(arr_uint8)
-        confidence = 91.0
+    # For 2-class model: pred is 0 (bg) or 1 (tumor)
+    # Derive sub-regions using model probability gradients within predicted tumor
+    if num_classes == 2 and np.any(pred == 1):
+        pred = _derive_subregions_from_probs(pred, probs)
+
+    # Compute mean max-probability as confidence proxy
+    max_prob = probs.max(dim=1)[0]
+    # Confidence only over predicted tumor region (non-background)
+    tumor_mask_t = (logits.argmax(dim=1).squeeze(0) > 0)
+    if tumor_mask_t.any():
+        confidence = round(max_prob[0][tumor_mask_t].mean().item() * 100, 1)
     else:
-        # Compute mean max-probability as confidence proxy
-        max_prob = probs.max(dim=1)[0].mean().item()
-        confidence = round(max_prob * 100, 1)
+        confidence = round(max_prob.mean().item() * 100, 1)
 
     # ── Metrics ─────────────────────────────────────────────
     # Compute volumes (pixel counts per class)
@@ -204,8 +128,9 @@ def run_inference(image_bytes: bytes) -> dict:
     # Scale to realistic mm³ range (1 pixel ≈ 1mm² at 256×256 for a typical 1mm-slice)
     tumor_volume_mm3 = max(round(vol_whole * 0.15, 0), 1)
 
-    # Compute dice-like quality scores based on segmentation coherence
-    dice_scores = _compute_segmentation_quality(pred, arr_uint8)
+    # Note: Real Dice scores require ground-truth labels which are not available
+    # at inference time. We report model prediction confidence per sub-region instead.
+    region_confidence = _compute_region_confidence(probs, pred, num_classes)
 
     # ── Coordinates (centroid of tumor region) ────────────
     # Prefer enhancing, fall back to core, then whole tumor
@@ -215,7 +140,6 @@ def run_inference(image_bytes: bytes) -> dict:
             cx = round(float(xs.mean()) / IMG_SIZE * 100, 1)
             cy = round(float(ys.mean()) / IMG_SIZE * 100, 1)
             # Estimate Z from tumor's mean intensity relative to brain range
-            # Maps intensity to an axial depth in [10, 90] range (mm-scale)
             tumor_intensity = arr_uint8[class_threshold].mean()
             brain_min = float(arr_uint8[arr_uint8 > 0].min()) if (arr_uint8 > 0).any() else 0
             brain_max = float(arr_uint8.max())
@@ -225,16 +149,6 @@ def run_inference(image_bytes: bytes) -> dict:
     else:
         cx, cy, cz = 50.0, 50.0, 50.0
 
-    # Compute overall dice as weighted average
-    d = dice_scores
-    overall_dice = round(
-        0.4 * d["whole_tumor"] + 0.35 * d["tumor_core"] + 0.25 * d["enhancing_tumor"], 1
-    ) if any(v > 0 for v in d.values()) else 0.0
-
-    # Update confidence based on actual detection quality
-    if len(unique_classes) <= 1:
-        confidence = overall_dice if overall_dice > 0 else 50.0
-
     # ── Visualisation images ──────────────────────────────────
     mri_b64       = _array_to_base64_png(arr_uint8, mode='L')
     overlay_b64   = _make_overlay_image(arr_uint8, pred)
@@ -242,7 +156,8 @@ def run_inference(image_bytes: bytes) -> dict:
 
     return {
         "status": "success",
-        "dice_scores": dice_scores,
+        "model_classes": num_classes,
+        "region_confidence": region_confidence,
         "tumor_volume_mm3": tumor_volume_mm3,
         "coordinates": {"x": cx, "y": cy, "z": cz},
         "confidence": confidence,
@@ -267,42 +182,64 @@ def _array_to_base64_png(arr: np.ndarray, mode='L') -> str:
     return base64.b64encode(buf.getvalue()).decode('utf-8')
 
 
-def _compute_segmentation_quality(pred: np.ndarray, arr_uint8: np.ndarray) -> dict:
+def _derive_subregions_from_probs(binary_pred: np.ndarray, probs: torch.Tensor) -> np.ndarray:
     """
-    Compute segmentation quality scores based on how well the detected regions
-    correlate with bright anomalous areas in the MRI.
+    For a 2-class model (bg/tumor), derive 3 sub-regions within the
+    model-predicted tumor area using the model's tumor probability map.
+    Higher tumor probability → enhancing > core > whole tumor.
     """
     from scipy import ndimage
-    arr_f = arr_uint8.astype(np.float32)
-    brain_mask = arr_f > max(arr_f.mean() * 0.25, 10)
-    brain_vals = arr_f[brain_mask] if brain_mask.sum() > 0 else arr_f.ravel()
-    brain_mean = brain_vals.mean()
-    brain_std = max(brain_vals.std(), 1e-6)
 
-    def region_score(region_mask):
+    mask = np.zeros_like(binary_pred)
+    tumor_region = binary_pred == 1
+    if not tumor_region.any():
+        return mask
+
+    mask[tumor_region] = 1  # Whole tumor
+
+    # Use the model's tumor-class probability as the signal (not raw image intensity)
+    tumor_prob = probs[0, 1].cpu().numpy()  # (H, W) — probability of class 1 (tumor)
+    tumor_vals = tumor_prob[tumor_region]
+    if len(tumor_vals) < 10:
+        return mask
+
+    p70 = np.percentile(tumor_vals, 70)
+    p90 = np.percentile(tumor_vals, 90)
+
+    # Tumor core: high-confidence sub-region within model-predicted tumor
+    tc_region = (tumor_prob > p70) & tumor_region
+    tc_region = ndimage.binary_fill_holes(tc_region) & tumor_region
+    if tc_region.sum() > 10:
+        mask[tc_region] = 2
+
+    # Enhancing tumor: highest-confidence hotspots within core
+    et_region = (tumor_prob > p90) & tc_region
+    et_region = ndimage.binary_fill_holes(et_region) & tc_region
+    if et_region.sum() > 5:
+        mask[et_region] = 3
+
+    return mask
+
+
+def _compute_region_confidence(probs: torch.Tensor, pred: np.ndarray, num_classes: int) -> dict:
+    """
+    Compute mean softmax confidence per predicted sub-region.
+    This is NOT a Dice score — it reflects the model's prediction certainty.
+    """
+    probs_np = probs.squeeze(0).cpu().numpy()  # (C, H, W)
+
+    def region_conf(region_mask, class_idx):
         if region_mask.sum() < 10:
             return 0.0
-        # Score based on: mean intensity of detected region vs brain
-        region_vals = arr_f[region_mask]
-        intensity_z = (region_vals.mean() - brain_mean) / brain_std
-        # Higher z-score means the detected region is truly brighter -> better detection
-        # Also factor in spatial coherence (compactness)
-        labeled, n = ndimage.label(region_mask)
-        largest = 0
-        for i in range(1, n + 1):
-            largest = max(largest, (labeled == i).sum())
-        compactness = largest / max(region_mask.sum(), 1)
-        score = min(98.0, max(60.0, 70.0 + intensity_z * 8.0 + compactness * 15.0))
-        return round(score, 1)
-
-    wt_score = region_score(pred >= 1)
-    tc_score = region_score(pred >= 2)
-    et_score = region_score(pred == 3)
+        if class_idx < num_classes:
+            return round(float(probs_np[class_idx][region_mask].mean()) * 100, 1)
+        # For derived sub-regions (2-class model), use tumor class confidence
+        return round(float(probs_np[1][region_mask].mean()) * 100, 1)
 
     return {
-        "whole_tumor":     wt_score if wt_score > 0 else 0.0,
-        "tumor_core":      tc_score if tc_score > 0 else 0.0,
-        "enhancing_tumor": et_score if et_score > 0 else 0.0,
+        "whole_tumor":     region_conf(pred >= 1, 1),
+        "tumor_core":      region_conf(pred >= 2, 2),
+        "enhancing_tumor":  region_conf(pred == 3, 3),
     }
 
 
@@ -409,9 +346,9 @@ def _make_3d_projection(mask: np.ndarray, view: str = 'axial') -> str:
 def _get_treatment_recommendation(vol_mm3: float, confidence: float, x: float, y: float, z: float) -> dict:
     """Generate clinical recommendation text based on metrics."""
     note = (
-        f"High segmentation confidence ({confidence:.0f}% Dice Score). "
+        f"Model prediction confidence: {confidence:.0f}%. "
         f"Tumor volume of {vol_mm3:.0f} cubic mm may indicate need for "
-        f"local surgical resection based on tumor location (x={x}, y={y}, z={z})."
+        f"further clinical evaluation based on tumor location (x={x}, y={y}, z={z})."
     )
     options = [
         {"treatment": "Radiation therapy", "detail": "Next MRI in 3 months"},
@@ -422,12 +359,14 @@ def _get_treatment_recommendation(vol_mm3: float, confidence: float, x: float, y
 
 
 # ─────────────────────────────────────────────────────────────
-# Demo data generator (BraTS-style synthetic MRI)
+# Demo data generator (synthetic MRI for UI testing only)
 # ─────────────────────────────────────────────────────────────
 
 def generate_demo_mri() -> bytes:
     """
-    Generate a synthetic BraTS-style brain MRI slice for demo purposes.
+    Generate a SYNTHETIC brain MRI slice for UI demo/testing only.
+    This is NOT real medical data. The model still runs real AI inference
+    on this synthetic input using trained weights.
     Returns PNG bytes.
     """
     h, w = IMG_SIZE, IMG_SIZE

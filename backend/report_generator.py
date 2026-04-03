@@ -73,8 +73,8 @@ def generate_pdf_report(analysis_result: dict) -> bytes:
     story = []
 
     # ── Header ────────────────────────────────────────────────
-    story.append(Paragraph("BRAIN TUMOR SEGMENTATION OUTPUT REPORT", title_style))
-    story.append(Paragraph("Multi-Path Fusion Network with Global Attention", subtitle_style))
+    story.append(Paragraph("MULTI-PATH FUSION NETWORK BASED GLOBAL ATTENTION FOR BRAIN TUMOR SEGMENTATION", title_style))
+    story.append(Paragraph("Segmentation Output Report", subtitle_style))
     story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#0056B3")))
     story.append(Spacer(1, 6))
 
@@ -105,17 +105,30 @@ def generate_pdf_report(analysis_result: dict) -> bytes:
     # ── Segmentation Metrics ──────────────────────────────────
     story.append(Paragraph("Segmentation Performance Metrics", header_style))
 
-    dice = analysis_result.get("dice_scores", {})
+    dice = analysis_result.get("region_confidence", analysis_result.get("dice_scores", {}))
     coords = analysis_result.get("coordinates", {})
+
+    # Determine label: real dice vs model confidence
+    has_ground_truth = analysis_result.get("has_ground_truth", False)
+    metric_label = "Dice Score" if has_ground_truth else "Model Confidence"
+
+    def _status(val, threshold):
+        if val <= 0:
+            return "–"
+        return "✓ PASS" if val >= threshold else "✗ BELOW"
+
+    wt = dice.get('whole_tumor', 0.0)
+    tc = dice.get('tumor_core', 0.0)
+    et = dice.get('enhancing_tumor', 0.0)
 
     metrics_data = [
         ["Metric", "Value", "Benchmark", "Status"],
-        ["Dice Score – Whole Tumor",    f"{dice.get('whole_tumor', 91.0):.1f}%",    "≥ 90%", "✓ PASS"],
-        ["Dice Score – Tumor Core",     f"{dice.get('tumor_core', 95.0):.1f}%",     "≥ 90%", "✓ PASS"],
-        ["Dice Score – Enhancing Tumor", f"{dice.get('enhancing_tumor', 90.0):.1f}%", "≥ 85%", "✓ PASS"],
-        ["Tumor Volume",  f"{analysis_result.get('tumor_volume_mm3', 438):.0f} mm³", "–", "–"],
-        ["Confidence Level", f"{analysis_result.get('confidence_label', 'High')} ({analysis_result.get('confidence', 91.0):.0f}%)", "≥ 85%", "✓ HIGH"],
-        ["Centroid Coordinates", f"x={coords.get('x', 45.8)}, y={coords.get('y', 67.2)}, z={coords.get('z', 23.1)}", "–", "–"],
+        [f"{metric_label} – Whole Tumor",    f"{wt:.1f}%",    "≥ 90%", _status(wt, 90)],
+        [f"{metric_label} – Tumor Core",     f"{tc:.1f}%",     "≥ 90%", _status(tc, 90)],
+        [f"{metric_label} – Enhancing Tumor", f"{et:.1f}%", "≥ 85%", _status(et, 85)],
+        ["Tumor Volume",  f"{analysis_result.get('tumor_volume_mm3', 0):.0f} mm³", "–", "–"],
+        ["Confidence Level", f"{analysis_result.get('confidence_label', 'N/A')} ({analysis_result.get('confidence', 0):.0f}%)", "≥ 85%", _status(analysis_result.get('confidence', 0), 85)],
+        ["Centroid Coordinates", f"x={coords.get('x', 0)}, y={coords.get('y', 0)}, z={coords.get('z', 0)}", "–", "–"],
     ]
 
     met_table = Table(metrics_data, colWidths=[70*mm, 40*mm, 35*mm, 25*mm])

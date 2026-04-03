@@ -178,13 +178,16 @@ class DecoderBlock(nn.Module):
 class MultiPathFusionNet(nn.Module):
     """
     Multi-Path Fusion Network with Global Attention for Brain Tumor Segmentation.
-    Input : (B, in_channels, 256, 256)  – 4-channel BraTS MRI (T1, T1ce, T2, FLAIR)
+    Input : (B, in_channels, 256, 256)  – grayscale MRI (1-ch) or 4-ch BraTS
     Output: (B, num_classes, 256, 256)  – Per-pixel class logits
-    Classes:
+    Classes (4-class mode):
         0 – Background
         1 – Whole Tumor  (green)
         2 – Tumor Core   (orange)
         3 – Enhancing Tumor (yellow)
+    Classes (2-class mode):
+        0 – Background
+        1 – Tumor
     """
 
     def __init__(self, in_channels=4, num_classes=4, base=32):
@@ -299,9 +302,20 @@ class CombinedLoss(nn.Module):
 # ─────────────────────────────────────────────────────────────
 
 def dice_score(pred_mask: torch.Tensor, true_mask: torch.Tensor, class_idx: int, smooth=1e-6) -> float:
-    """Compute per-class Dice score."""
-    p = (pred_mask == class_idx).float()
-    t = (true_mask == class_idx).float()
+    """Compute per-class Dice score using BraTS hierarchical regions."""
+    # BraTS convention for hierarchical evaluation:
+    #   Whole Tumor (WT): all tumor classes >= 1
+    #   Tumor Core (TC):  classes >= 2 (core + enhancing)
+    #   Enhancing Tumor (ET): class == 3
+    if class_idx == 1:
+        p = (pred_mask >= 1).float()
+        t = (true_mask >= 1).float()
+    elif class_idx == 2:
+        p = (pred_mask >= 2).float()
+        t = (true_mask >= 2).float()
+    else:
+        p = (pred_mask == class_idx).float()
+        t = (true_mask == class_idx).float()
     intersection = (p * t).sum().item()
     return (2 * intersection + smooth) / (p.sum().item() + t.sum().item() + smooth)
 
